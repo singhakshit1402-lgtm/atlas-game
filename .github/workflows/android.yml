@@ -34,11 +34,15 @@ jobs:
 
       - name: Compile APK with Buildozer
         run: |
-          buildozer android debug
+          yes | buildozer android debug
+        env:
+          BUILDOZER_WARN_ON_ROOT: 1
+          BUILDOZER_ALLOW_ORG_VERSION_BACKWARD_COMPATIBILITY: 1
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: package
           path: bin/*.apk
+          
           
