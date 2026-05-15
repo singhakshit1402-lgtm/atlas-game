@@ -1,22 +1,56 @@
 [app]
+# (str) Title of your application
 title = Atlas Game
-package.name = akatlasgame
-package.domain = com.aki
+
+# (str) Package name
+package.name = atlasgame
+
+# (str) Package domain (needed for android packaging)
+package.domain = org.example
+
+# (str) Source code where the main.py lives
 source.dir = .
-source.include_exts = py,png,wav
 
-version = 1.0
+# (list) Source files to include (matches all your uploaded assets)
+source.include_exts = py,png,jpg,kv,wav,atlas
 
+# (str) Application versioning
+version = 1.0.0
+
+# (list) Application requirements 
 requirements = python3,kivy
 
+# (list) Supported orientations
 orientation = portrait
-fullscreen = 0
 
-android.permissions = INTERNET
+# (bool) Use fullscreen mode
+fullscreen = 1
 
-presplash.filename = background.png
-icon.filename = icon.png
+# ==========================================
+# Android specific configuration
+# ==========================================
+
+# (int) Target Android API (API 33 is required for modern compilers)
+android.api = 33
+
+# (int) Minimum API your APK will support
+android.minapi = 21
+
+# (str) Android NDK architecture (Builds for modern phones)
+android.archs = arm64-v8a, armeabi-v7a
+
+# (bool) Skip byte-compilation for .py files if compilation fails
+android.skip_byte_compile = 1
+
+# (str) Format used to package the app
+android.release_artifact = apk
+
+# (bool) Automatically accept SDK/NDK licenses on GitHub virtual runner
+android.accept_apk_license = True
 
 [buildozer]
+# (int) Log level (2 = standard details, 1 = error only)
 log_level = 2
+
+# (int) Display warning animations
 warn_on_root = 1
