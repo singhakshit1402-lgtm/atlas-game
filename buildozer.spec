@@ -3,7 +3,7 @@
 title = Atlas Game
 
 # (str) Package name
-package.name = atlasgame
+package.name = com.atlasgamebyAk
 
 # (str) Package domain (needed for android packaging)
 package.domain = org.example
@@ -21,7 +21,7 @@ source.include_exts = py,png,jpg,kv,wav,atlas
 version = 1.0.0
 
 # (list) Application requirements 
-requirements = python3,kivy
+requirements = python3,kivy, requests
 
 # (list) Supported orientations
 orientation = portrait
