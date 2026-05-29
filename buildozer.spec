@@ -30,6 +30,8 @@ orientation = portrait
 
 # (bool) Use fullscreen mode
 fullscreen = 1
+# Ensure the line is uncommented (remove any '#' symbol at the front)
+android.permissions = android.permission.INTERNET, android.permission.ACCESS_NETWORK_STATE
 
 # ==========================================
 # Android specific configuration
