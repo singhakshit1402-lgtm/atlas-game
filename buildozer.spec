@@ -14,6 +14,8 @@ source.dir = .
 # (str) Icon of the application
 icon.filename = %(source.dir)s/icon.png
 
+presplash.filename = %(source.dir)s/presplash.png
+
 # (list) Source files to include (matches all your uploaded assets)
 source.include_exts = py,png,jpg,kv,wav,atlas
 
