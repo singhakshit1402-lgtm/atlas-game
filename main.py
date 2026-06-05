@@ -23,6 +23,8 @@ from kivy.animation import Animation
 Window.softinput_mode = 'below_target'
 Window.clearcolor = get_color_from_hex('#B3E5FC')
 
+HINT_IMAGE_PATH = 'hint_icon.png' if os.path.exists('hint_icon.png') else ('hint_icon.jpg' if os.path.exists('hint_icon.jpg') else None)
+
 # --- UI COMPONENTS ---
 class StyledButton(Button):
     def __init__(self, bg_color='#1976D2', radius=None, **kwargs):
@@ -58,43 +60,46 @@ class StyledCard(BoxLayout):
         self.rect.pos = self.pos
         self.rect.size = self.size
 
-# --- UNIVERSAL GRAPHICS TIMELINE HISTORY ITEM ---
 class HistoryItem(StyledCard):
-    def __init__(self, sender, word, status="correct", error_msg="", **kwargs):
+    def __init__(self, sender, word, status="correct", error_msg="", category_tag="", **kwargs):
         if status == "correct":
             bg = '#E8F5E9' if sender == "YOU" else '#E3F2FD'
-            status_symbol = "[color=#4CAF50][b]✔[/b][/color]"
+            status_symbol = "[color=#4CAF50][b][OK][/b][/color]"
         elif status == "warning":
             bg = '#FFF8E1'
-            status_symbol = "[color=#FF9800][b]! [/b][/color]"
+            status_symbol = "[color=#FF9800][b][!][/b][/color]"
         else:
             bg = '#FFEBEE'
-            status_symbol = "[color=#F44336][b]X[/b][/color]"
+            status_symbol = "[color=#F44336][b][X][/b][/color]"
 
-        super().__init__(bg_color=bg, radius=[dp(10)], orientation='vertical', 
-                         padding=[dp(8), dp(6), dp(8), dp(6)], spacing=dp(4), size_hint_y=None, **kwargs)
-        
+        super().__init__(bg_color=bg, radius=[dp(10)], orientation='vertical', padding=[dp(8), dp(6), dp(8), dp(6)], spacing=dp(4), size_hint_y=None, **kwargs)
         self.height = dp(68) if error_msg else dp(48)
 
-        meta_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(16))
+        meta_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(16), spacing=dp(6))
         badge_bg = '#4CAF50' if sender == "YOU" else '#1976D2'
         
         badge_card = StyledCard(bg_color=badge_bg, radius=[dp(4)], size_hint=(None, None), size=(dp(34), dp(14)))
         badge_lbl = Label(text=sender, font_size='9sp', bold=True, color=(1,1,1,1))
         badge_card.add_widget(badge_lbl)
         meta_row.add_widget(badge_card)
+        
+        if category_tag:
+            tag_card = StyledCard(bg_color='#78909C', radius=[dp(4)], size_hint=(None, None), size=(dp(38), dp(14)))
+            tag_lbl = Label(text=category_tag, font_size='8sp', bold=True, color=(1,1,1,1))
+            tag_card.add_widget(tag_lbl)
+            meta_row.add_widget(tag_card)
+            
         self.add_widget(meta_row)
 
         content_row = BoxLayout(orientation='horizontal', spacing=dp(4), size_hint_y=1)
         flag_lbl = Label(text="►", font_size='10sp', color=(0.5, 0.5, 0.5, 1), size_hint_x=None, width=dp(12), halign='left')
         content_row.add_widget(flag_lbl)
 
-        word_lbl = Label(text=f"[b]{word.title()}[/b]", markup=True, font_size='13sp', color=(0,0,0,1), 
-                         halign='left', valign='middle')
+        word_lbl = Label(text=f"[b]{word.title()}[/b]", markup=True, font_size='13sp', color=(0,0,0,1), halign='left', valign='middle')
         word_lbl.bind(size=lambda x, s: setattr(x, 'text_size', (x.width, x.height)))
         content_row.add_widget(word_lbl)
 
-        status_lbl = Label(text=status_symbol, markup=True, font_size='14sp', bold=True, size_hint_x=None, width=dp(16), halign='right')
+        status_lbl = Label(text=status_symbol, markup=True, font_size='14sp', bold=True, size_hint_x=None, width=dp(20), halign='right')
         content_row.add_widget(status_lbl)
         self.add_widget(content_row)
 
@@ -118,91 +123,64 @@ class StartScreen(Screen):
                 self.bg_rect = Rectangle(pos=layout.pos, size=layout.size)
         layout.bind(pos=self.update_bg, size=self.update_bg)
 
-        rules_card = StyledCard(
-            orientation='vertical', padding=dp(16), spacing=dp(12), bg_color='#FFFFFF',
-            size_hint=(0.85, 0.42), pos_hint={'center_x': 0.5, 'top': 0.85}
-        )
+        rules_card = StyledCard(orientation='vertical', padding=dp(16), spacing=dp(12), bg_color='#FFFFFF', size_hint=(0.85, 0.45), pos_hint={'center_x': 0.5, 'top': 0.88})
         
-        title_box = BoxLayout(orientation='horizontal', size_hint_y=0.2, spacing=dp(8))
+        title_box = BoxLayout(orientation='horizontal', size_hint_y=0.18, spacing=dp(8))
         title_lbl = Label(text="[b][color=#1976D2]■ HOW TO PLAY :-[/color][/b]", markup=True, font_size='22sp', halign='left', valign='middle')
         title_lbl.bind(size=lambda x, s: setattr(x, 'text_size', (x.width, x.height)))
         title_box.add_widget(title_lbl)
         rules_card.add_widget(title_box)
 
-        lbl1 = Label(text="● 1. You have to name a Country that starts with the last letter of the previous Country.", color=get_color_from_hex('#0D47A1'), font_size='14sp', halign='left', valign='middle')
+        lbl1 = Label(text="● 1. Name a place starting with the last letter of the previous item. Mixed mode starts with 3 Lives.", color=get_color_from_hex('#0D47A1'), font_size='13sp', halign='left', valign='middle')
         lbl1.bind(size=lambda x, s: setattr(x, 'text_size', (x.width, x.height)))
         rules_card.add_widget(lbl1)
         
-        lbl2 = Label(text="● 2. No country can be repeated. And You get points for each correct answer given within 30 second !! For Example- new york, andhra pradesh,etc\nSo, write like this in example by giving space in between as they written in english !!! ", color=get_color_from_hex('#0D47A1'), font_size='12sp', halign='left', valign='middle')
+        lbl2 = Label(text="● 2. Mixed Category Bonus Points: Countries = 10, States/Continents = 15, Capitals = 25! Wrong answers drain clock time.", color=get_color_from_hex('#0D47A1'), font_size='13sp', halign='left', valign='middle')
         lbl2.bind(size=lambda x, s: setattr(x, 'text_size', (x.width, x.height)))
         rules_card.add_widget(lbl2)
         
-        lbl3 = Label(text="● 3. Change modes below to mix in Capitals, Continents, and States...!!!", color=get_color_from_hex('#0D47A1'), font_size='14sp', halign='left', valign='middle')
+        lbl3 = Label(text="● 3. Switch game systems below. Country Only mode removes the life system entirely!", color=get_color_from_hex('#0D47A1'), font_size='13sp', halign='left', valign='middle')
         lbl3.bind(size=lambda x, s: setattr(x, 'text_size', (x.width, x.height)))
         rules_card.add_widget(lbl3)
-        
         layout.add_widget(rules_card)
 
-        play_btn = StyledButton(
-            text="PLAY", bold=True, font_size='30sp', bg_color='#4CAF50',
-            size_hint=(None, None), size=(dp(120), dp(120)), pos_hint={'center_x': 0.5, 'center_y': 0.38}, radius=[dp(60)]
-        )
+        play_btn = StyledButton(text="PLAY", bold=True, font_size='30sp', bg_color='#4CAF50', size_hint=(None, None), size=(dp(120), dp(120)), pos_hint={'center_x': 0.5, 'center_y': 0.36}, radius=[dp(60)])
         play_btn.bind(on_release=self.go_to_game)
         layout.add_widget(play_btn)
+        
+        download_badge = StyledCard(bg_color='#0D47A1', radius=[dp(12)], orientation='horizontal', padding=[dp(10), dp(4), dp(10), dp(4)], size_hint=(None, None), size=(dp(140), dp(34)), pos_hint={'center_x': 0.5, 'center_y': 0.23})
+        self.top_download_lbl = Label(text="Downloads: ...", font_size='12sp', bold=True, color=(1, 1, 1, 1), halign='center', valign='middle')
+        download_badge.add_widget(self.top_download_lbl)
+        layout.add_widget(download_badge)
 
-        mode_box = BoxLayout(orientation='horizontal', size_hint=(0.85, 0.08), pos_hint={'center_x': 0.5, 'center_y': 0.16}, spacing=dp(12))
+        mode_box = BoxLayout(orientation='horizontal', size_hint=(0.85, 0.08), pos_hint={'center_x': 0.5, 'center_y': 0.14}, spacing=dp(12))
         self.btn_country_only = StyledButton(text="Countries Only", bold=True, font_size='13sp', bg_color='#1976D2', radius=[dp(10)])
-        self.btn_country_only.bind(on_release=lambda x: self.select_game_mode("country"))
+        self.btn_country_only.bind(on_release=lambda x: App.get_running_app().select_game_mode("country"))
         self.btn_all_combined = StyledButton(text="All-In-One Mixed", bold=True, font_size='13sp', bg_color='#78909C', radius=[dp(10)])
-        self.btn_all_combined.bind(on_release=lambda x: self.select_game_mode("all"))
+        self.btn_all_combined.bind(on_release=lambda x: App.get_running_app().select_game_mode("all"))
         
         mode_box.add_widget(self.btn_country_only)
         mode_box.add_widget(self.btn_all_combined)
         layout.add_widget(mode_box)
         self.add_widget(layout)
 
-    def select_game_mode(self, mode_selection):
-        app = App.get_running_app()
-        app.game_mode = mode_selection
-        if mode_selection == "country":
-            self.btn_country_only.change_color('#1976D2')
-            self.btn_all_combined.change_color('#78909C')
-        else:
-            self.btn_country_only.change_color('#78909C')
-            self.btn_all_combined.change_color('#9C27B0')
-
     def update_bg(self, *args):
         self.bg_rect.pos = self.pos
         self.bg_rect.size = self.size
 
     def go_to_game(self, *args):
-        self.manager.current = 'game'
         app = App.get_running_app()
-        if hasattr(app, 'restart_game'):
-            app.restart_game()
+        if hasattr(app, 'hint_sound') and app.hint_sound:
+            app.hint_sound.play()
+        self.manager.current = 'game'
+        app.restart_game()
 
 
 class GameScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout = FloatLayout()
-        app = App.get_running_app()
         
-        # Sleek Floating Download Tally Badge in the Top Right Corner
-        download_badge = StyledCard(
-            bg_color='#0D47A1', radius=[dp(12)], 
-            orientation='horizontal', padding=[dp(10), dp(4), dp(10), dp(4)],
-            size_hint=(None, None), size=(dp(100), dp(25)),
-            pos_hint={'right': 0.98, 'top': 0.98}
-        )
-        
-        app.top_download_lbl = Label(
-            text="Downloads: ...", font_size='12sp', 
-            bold=True, color=(1, 1, 1, 1), halign='center', valign='middle'
-        )
-        download_badge.add_widget(app.top_download_lbl)
-        self.layout.add_widget(download_badge)
-
         with self.layout.canvas.before:
             if os.path.exists('background.png'):
                 self.bg_rect = Rectangle(source='background.png', pos=self.layout.pos, size=self.layout.size)
@@ -213,55 +191,74 @@ class GameScreen(Screen):
         
         stats_grid = GridLayout(cols=4, spacing=dp(10), size_hint=(0.95, 0.1), pos_hint={'center_x': 0.5, 'top': 0.88})
 
-        app.score_lbl = app.create_stat(stats_grid, "SCORE", "0", "#2196F3")
-        app.timer_lbl = app.create_stat(stats_grid, "TIME LEFT", "30s", "#4CAF50")
-        app.best_lbl = app.create_stat(stats_grid, "BEST", "0", "#9C27B0")
-        app.streak_lbl = app.create_stat(stats_grid, "STREAK", "0", "#E91E63")
+        self.score_lbl = self.create_stat(stats_grid, "SCORE", "0", "#2196F3")
+        self.timer_lbl = self.create_stat(stats_grid, "TIME LEFT", "30s", "#4CAF50")
+        self.best_lbl = self.create_stat(stats_grid, "BEST", "0", "#9C27B0")
+        self.lives_lbl = self.create_stat(stats_grid, "LIVES", "3 / 3", "#E91E63")
         self.layout.add_widget(stats_grid)
 
         content_area = BoxLayout(orientation='horizontal', size_hint=(0.95, 0.58), pos_hint={'center_x': 0.5, 'top': 0.76}, spacing=dp(15))
         game_card = StyledCard(orientation='vertical', padding=dp(15), spacing=dp(12), size_hint_x=0.58)
         game_card.add_widget(Label(text="LAST LETTER", color=(0.5,0.5,0.5,1), size_hint_y=0.1))
         
-        app.letter_box = StyledCard(bg_color='#E3F2FD', radius=[dp(10)], size_hint_y=0.3)
-        app.last_letter_lbl = Label(text="?", font_size='80sp', bold=True, color=get_color_from_hex('#1976D2'), markup=True)
-        app.letter_box.add_widget(app.last_letter_lbl)
-        game_card.add_widget(app.letter_box)
+        self.letter_box = StyledCard(bg_color='#E3F2FD', radius=[dp(10)], size_hint_y=0.3)
+        self.last_letter_lbl = Label(text="?", font_size='80sp', bold=True, color=get_color_from_hex('#1976D2'), markup=True)
+        self.letter_box.add_widget(self.last_letter_lbl)
+        game_card.add_widget(self.letter_box)
 
-        app.instruction = Label(text="Enter an item!", color=(0,0,0,1), font_size='14sp', size_hint_y=0.1)
-        game_card.add_widget(app.instruction)
+        self.instruction = Label(text="Enter an item!", color=(0,0,0,1), markup=True, font_size='13sp', halign='center', valign='middle', size_hint_y=0.1)
+        self.instruction.bind(size=lambda x, s: setattr(x, 'text_size', (x.width, x.height)))
+        game_card.add_widget(self.instruction)
 
-        app.user_input = TextInput(hint_text="Type response here...", multiline=False, size_hint_y=None, height=dp(55), padding=[dp(10), dp(15)])
-        app.user_input.bind(on_text_validate=app.handle_turn)
-        game_card.add_widget(app.user_input)
+        hint_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(40), spacing=dp(10), padding=[0, dp(4)])
+        hint_info_lbl = Label(text="Need a country? (Costs 50 pts)", font_size='11sp', color=(0.4, 0.4, 0.4, 1), halign='left', valign='middle')
+        hint_info_lbl.bind(size=lambda x, s: setattr(x, 'text_size', (x.width, x.height)))
+        hint_row.add_widget(hint_info_lbl)
 
-        app.submit_btn = StyledButton(text="SUBMIT", bold=True, bg_color='#9CEF43', size_hint_y=None, height=dp(50))
-        app.submit_btn.bind(on_release=app.handle_turn)
-        game_card.add_widget(app.submit_btn)
+        hint_btn_text = f"[ref=hint][img={HINT_IMAGE_PATH}][/ref]" if HINT_IMAGE_PATH else "[b]HINT[/b]"
+        self.hint_btn = StyledButton(text=hint_btn_text, markup=True, font_size='12sp', color=(0,0,0,1), bg_color='#FFC107', size_hint=(None, None), size=(dp(54), dp(36)), radius=[dp(10)])
+        self.hint_btn.bind(on_release=lambda x: App.get_running_app().trigger_country_hint())
+        hint_row.add_widget(self.hint_btn)
+        game_card.add_widget(hint_row)
+        
+        self.user_input = TextInput(hint_text="Type response here...", multiline=False, size_hint_y=None, height=dp(55), padding=[dp(10), dp(15)])
+        self.user_input.bind(on_text_validate=lambda x: App.get_running_app().handle_turn())
+        game_card.add_widget(self.user_input)
+
+        self.submit_btn = StyledButton(text="SUBMIT", bold=True, bg_color='#9CEF43', size_hint_y=None, height=dp(50))
+        self.submit_btn.bind(on_release=lambda x: App.get_running_app().handle_turn())
+        game_card.add_widget(self.submit_btn)
         content_area.add_widget(game_card)
 
         history_card = StyledCard(orientation='vertical', padding=dp(10), size_hint_x=0.42)
         history_card.add_widget(Label(text="RESPONSE HISTORY", bold=True, color=get_color_from_hex('#1976D2'), size_hint_y=0.08, font_size='12sp'))
         
-        app.history_scroll = ScrollView(do_scroll_x=False)
-        app.history_layout = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(6), padding=[dp(2), dp(2)])
-        app.history_layout.bind(minimum_height=app.history_layout.setter('height'))
+        self.history_scroll = ScrollView(do_scroll_x=False)
+        self.history_scroll_layout = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(6), padding=[dp(2), dp(2)])
+        self.history_scroll_layout.bind(minimum_height=self.history_scroll_layout.setter('height'))
         
-        app.history_scroll.add_widget(app.history_layout)
-        history_card.add_widget(app.history_scroll)
+        self.history_scroll.add_widget(self.history_scroll_layout)
+        history_card.add_widget(self.history_scroll) 
         content_area.add_widget(history_card)
-        content_area.bind()
         self.layout.add_widget(content_area)
 
         bottom_btns = BoxLayout(size_hint=(0.95, 0.08), pos_hint={'center_x': 0.5, 'y': 0.04}, spacing=dp(20))
         restart_btn = StyledButton(text="RESTART", bg_color='#1976D2', bold=True)
-        restart_btn.bind(on_release=app.restart_game)
+        restart_btn.bind(on_release=lambda x: App.get_running_app().restart_game())
         exit_btn = StyledButton(text="EXIT", bg_color='#F44336', bold=True)
         exit_btn.bind(on_release=self.go_to_start)
         bottom_btns.add_widget(restart_btn)
         bottom_btns.add_widget(exit_btn)
         self.layout.add_widget(bottom_btns)
         self.add_widget(self.layout)
+
+    def create_stat(self, parent, title, val, color):
+        card = StyledCard(orientation='vertical', padding=dp(5))
+        card.add_widget(Label(text=title, font_size='10sp', color=(0.4,0.4,0.4,1)))
+        v = Label(text=val, font_size='14sp', bold=True, color=get_color_from_hex(color))
+        card.add_widget(v)
+        parent.add_widget(card)
+        return v
 
     def update_bg(self, *args):
         self.bg_rect.pos = self.pos
@@ -270,27 +267,17 @@ class GameScreen(Screen):
     def go_to_start(self, *args):
         self.manager.current = 'start'
         app = App.get_running_app()
-        if app.timer_event: 
-            Clock.unschedule(app.timer_event)
-        if app.bot_timer_event: 
-            Clock.unschedule(app.bot_timer_event)
+        if app.timer_event: Clock.unschedule(app.timer_event)
+        if app.bot_timer_event: Clock.unschedule(app.bot_timer_event)
 
 
 # --- MAIN APP ---
 class AtlasApp(App):
     def build(self):
-        # Database Sets Full Lists
-        self.countries = [#Countries
- "afghanistan", "albania", "algeria","america", "andorra", "angola","antigua & deps", "argentina", "armenia", "australia", "austria","azerbaijan", "bahamas", "bahrain", "bangladesh", "barbados","belarus", "belgium", "belize", "benin", "bhutan","bolivia", "bosnia herzegovina", "botswana", "brazil","brunei","bulgaria", "burkina", "burundi", "cambodia", "cameroon","canada", "cape verde", "central african rep", "chad", "chile","china", "colombia", "comoros", "congo", "cong","costa rica", "croatia", "cuba", "cyprus", "czech republic","denmark", "djibouti", "dominica", "dominican republic", "east timor","ecuador", "egypt", "el salvador", "equatorial guinea", "eritrea","estonia", "ethiopia", "fiji", "finland", "france","gabon", "gambia", "georgia", "germany", "ghana","greece", "grenada", "guatemala", "guinea", "guinea-bissau","guyana", "haiti", "honduras", "hungary", "iceland","india", "indonesia", "iran", "iraq", "ireland","israel", "italy", "ivory coast", "jamaica", "japan","jordan", "kazakhstan", "kenya", "kiribati", "north korea","south korea", "kosovo", "kuwait", "kyrgyzstan", "laos","latvia", "lebanon", "lesotho", "liberia", "libya","liechtenstein", "lithuania", "luxembourg", "macedonia", "madagascar","malawi", "malaysia", "maldives", "mali", "malta","marshall islands", "mauritania", "mauritius", "mexico", "micronesia","moldova", "monaco", "mongolia", "montenegro", "morocco","mozambique", "myanmar", "namibia", "nauru", "nepal","netherlands", "new zealand", "nicaragua", "niger", "nigeria","norway", "oman", "pakistan", "palau", "panama","papua new guinea", "paraguay", "peru", "philippines", "poland","portugal", "qatar", "romania", "russia", "rwanda","st kitts & nevis", "st lucia", "saint vincent & the grenadines","samoa", "san marino", "sao tome & principe", "saudi arabia","senegal", "serbia", "seychelles", "sierra leone", "singapore","slovakia", "slovenia", "solomon islands","somalia", "south africa","south sudan", "spain", "sri lanka", "sudan", "suriname","swaziland", "sweden", "switzerland", "syria", "taiwan","tajikistan", "tanzania", "thailand", "togo", "tonga","trinidad & tobago", "tunisia", "turkey", "turkmenistan", "tuvalu","uganda", "ukraine", "united arab emirates", "united kingdom","united states", "uruguay", "uzbekistan", "vanuatu","vatican city", "venezuela", "vietnam", "yemen","zambia", "zimbabwe"
-        ]
-        
+        self.countries = ["afghanistan", "albania", "algeria","america", "andorra", "angola","antigua & deps", "argentina", "armenia", "australia", "austria","azerbaijan", "bahamas", "bahrain", "bangladesh", "barbados","belarus", "belgium", "belize", "benin", "bhutan","bolivia", "bosnia herzegovina", "botswana", "brazil","brunei","bulgaria", "burkina", "burundi", "cambodia", "cameroon","canada", "cape verde", "central african rep", "chad", "chile","china", "colombia", "comoros", "congo", "cong","costa rica", "croatia", "cuba", "cyprus", "czech republic","denmark", "djibouti", "dominica", "dominican republic", "east timor","ecuador", "egypt", "el salvador", "equatorial guinea", "eritrea","estonia", "ethiopia", "fiji", "finland", "france","gabon", "gambia", "georgia", "germany", "ghana","greece", "grenada", "guatemala", "guinea", "guinea-bissau","guyana", "haiti", "honduras", "hungary", "iceland","india", "indonesia", "iran", "iraq", "ireland","israel", "italy", "ivory coast", "jamaica", "japan","jordan", "kazakhstan", "kenya", "kiribati", "north korea","south korea", "kosovo", "kuwait", "kyrgyzstan", "laos","latvia", "lebanon", "lesotho", "liberia", "libya","liechtenstein", "lithuania", "luxembourg", "macedonia", "madagascar","malawi", "malaysia", "maldives", "mali", "malta","marshall islands", "mauritania", "mauritius", "mexico", "micronesia","moldova", "monaco", "mongolia", "montenegro", "morocco","mozambique", "myanmar", "namibia", "nauru", "nepal","netherlands", "new zealand", "nicaragua", "niger", "nigeria","norway", "oman", "pakistan", "palau", "panama","papua new guinea", "paraguay", "peru", "philippines", "poland","portugal", "qatar", "romania", "russia", "rwanda","st kitts & nevis", "st lucia", "saint vincent & the grenadines","samoa", "san marino", "sao tome & principe", "saudi arabia","senegal", "serbia", "seychelles", "sierra leone", "singapore","slovakia", "slovenia", "solomon islands","somalia", "south africa","south sudan", "spain", "sri lanka", "sudan", "suriname","swaziland", "sweden", "switzerland", "syria", "taiwan","tajikistan", "tanzania", "thailand", "togo", "tonga","trinidad & tobago", "tunisia", "turkey", "turkmenistan", "tuvalu","uganda", "ukraine", "united arab emirates", "united kingdom","united states", "uruguay", "uzbekistan", "vanuatu","vatican city", "venezuela", "vietnam", "yemen","zambia", "zimbabwe",]
         self.continents = ["asia", "africa", "north america", "south america", "antarctica", "europe", "australia"]
-        
-        self.capitals = ["algiers","luanda","porto-novo","gaborone","ouagadougou","gitega","praia","yaounde","bangui","n'djamena","moroni","kinshasa","brazzaville","yamoussoukro","djibouti","cairo","malabo","asmara","mbabane","addis ababa","libreville","banjul","accra","conakry","bissau","nairobi","maseru","monrovia","tripoli","antananarivo","lilongwe","bamako","nouakchott","port louis","rabat","maputo","windhoek","niamey","abuja","kigali","sao tome","dakar","victoria","freetown","mogadishu","pretoria","juba","khartoum","dodoma","lome","tunis","kampala","lusaka","harare","kabul","yerevan","baku","manama","dhaka","thimphu","bandar seri begawan","phnom penh","beijing","nicosia","tbilisi","new delhi","delhi","jakarta","tehran","baghdad","jerusalem","tokyo","amman","astana","kuwait city","bishkek","vientiane","beirut","kuala lumpur","male","naypyidaw","ulaanbaatar","kathmandu","pyongyang","muscat","islamabad","manila","doha","riyadh","singapore","seoul","sri jayawardenepura kotte","damascus","taipei","dushanbe","bangkok","dili","ankara","ashgabat","abu dhabi","tashkent","hanoi","sanaa","tirana","andorra la vella","vienna","minsk","brussels","sarajevo","sofia","zagreb","prague","copenhagen","tallinn","helsinki","paris","berlin","athens","budapest","reykjavik","dublin","rome","pristina","riga","vaduz","vilnius","luxembourg","valletta","chisinau","monaco","podgorica","amsterdam","skopje","oslo","warsaw","lisbon","bucharest","moscow","san marino","belgrade","bratislava","ljubljana","madrid","stockholm","bern","kyiv","london","vatican city","st. john's","nassau","bridgetown","belmopan","ottawa","san jose","havana","roseau","santo domingo","san salvador","st. george's","guatemala city","port-au-prince","tegucigalpa","kingston","mexico city","managua","panama city","basseterre","castries","kingstown","washington , d.c.","canberra","suva","tarawa","majuro","palikir","yaren","wellington","ngerulmud","port moresby","apia","honiara","nuku'alofa","funafuti","port vila","buenos aires","sucre","brasília","santiago","bogota","quito","georgetown","asuncion","lima","paramaribo","montevideo","caracas",
-        ]
-        
-        self.states = [#state 
-#india
+        self.capitals = ["algiers", "luanda", "porto-novo", "gaborone", "praia", "yaounde", "bangui", "moroni", "cairo", "djibouti", "asmara", "malabo", "libreville", "accra", "conakry", "bissau", "nairobi", "maseru", "monrovia", "tripoli", "antananarivo", "lilongwe", "bamako", "nouakchott", "port louis", "rabat", "maputo", "windhoek", "niamey", "abuja", "kigali", "dakar", "victoria", "freetown", "mogadishu", "pretoria", "juba", "khartoum", "dodoma", "lome", "tunis", "kampala", "lusaka", "harare", "kabul", "yerevan", "baku", "manama", "dhaka", "thimphu", "beijing", "nicosia", "tbilisi", "new delhi", "delhi", "jakarta", "tehran", "baghdad", "tokyo", "amman", "astana", "kuwait city", "bishkek", "vientiane", "beirut", "kuala lumpur", "male", "ulaanbaatar", "kathmandu", "pyongyang", "muscat", "islamabad", "manila", "doha", "riyadh", "singapore", "seoul", "damascus", "taipei", "dushanbe", "bangkok", "dili", "ankara", "ashgabat", "abu dhabi", "tashkent", "hanoi", "sanaa", "tirana", "vienna", "minsk", "brussels", "sofia", "zagreb", "prague", "copenhagen", "tallinn", "helsinki", "paris", "berlin", "athens", "budapest", "reykjavik", "dublin", "rome", "riga", "vilnius", "luxembourg", "valletta", "chisinau", "monaco", "amsterdam", "oslo", "warsaw", "lisbon", "bucharest", "moscow", "san marino", "belgrade", "bratislava", "ljubljana", "madrid", "stockholm", "bern", "kyiv", "london", "vatican city", "ottawa", "havana", "mexico city", "washington", "canberra", "wellington", "buenos aires", "brasília", "santiago", "bogota", "quito", "asuncion", "lima", "paramaribo", "montevideo", "caracas"]
+        self.states = [#india
 "andaman and nicobar islands", "andhra pradesh", "arunachal pradesh", "assam", "bihar", "chandigarh", "chhattisgarh", "dadra and nagar haveli", "daman and diu", "delhi", "goa", "gujarat", "haryana", "himachal pradesh", "jammu and kashmir", "jharkhand", "karnataka", "kerala", "ladakh", "lakshadweep", "madhya pradesh", "maharashtra", "manipur", "meghalaya", "mizoram", "nagaland", "odisha", "puducherry", "punjab", "rajasthan", "sikkim", "tamil nadu", "telangana", "tripura", "uttar pradesh", "uttarakhand", "west bengal",
 #america
 "alabama","alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", "wisconsin", "wyoming",
@@ -341,243 +328,415 @@ class AtlasApp(App):
 #kenya
 "nairobi county", "mombasa county", "kajiado county", "kiambu county", "nakuru county", "uasin gishu county", "kisumu county", "machakos county", "meru county", "embu county", "nyeri county", "nyandarua county", "laikipia county", "murang'a county", "kirinyaga county", "kilifi county", "kwale county", "taita taveta county", "tana river county", "lamu county", "garissa county", "wajir county", "mandera county", "marsabit county", "isiolo county", "samburu county", "turkana county", "west pokot county", "baringo county", "elgeyo-marakwet county", "bomet county", "kericho county", "narok county", "bungoma county", "busia county", "vihiga county", "vihiga county", "siaya county", "homa bay county", "migori county", "nyamira county", "kisii county",
 #newzealand
-"northland", "auckland", "waikato", "bay of plenty", "gisborne", "hawke's bay", "taranaki", "manawatu-whanganui", "wellington", "tasman", "nelson", "marlborough", "west coast", "canterbury", "otago", "southland",
-        ]
+"northland", "auckland", "waikato", "bay of plenty", "gisborne", "hawke's bay", "taranaki", "manawatu-whanganui", "wellington", "tasman", "nelson", "marlborough", "west coast", "canterbury", "otago", "southland",]
 
-        # Instantly create and return the Screen Manager so Android can render the UI without lag
+        self.item_types = {}
+        for item in self.countries: self.item_types[item] = "C"
+        for item in self.capitals: self.item_types[item] = "Cap"
+        for item in self.continents: self.item_types[item] = "Cont"
+        for item in self.states: self.item_types[item] = "S"
+
+        self.point_weights = {"C": 10, "Cont": 15, "S": 15, "Cap": 25}
+
         self.sm = ScreenManager(transition=FadeTransition())
-        self.sm.add_widget(StartScreen(name='start'))
-        self.sm.add_widget(GameScreen(name='game'))
+        self.start_screen = StartScreen(name='start')
+        self.game_screen = GameScreen(name='game')
+        self.sm.add_widget(self.start_screen)
+        self.sm.add_widget(self.game_screen)
         return self.sm
 
+    @property
+    def gs(self):
+        return self.sm.get_screen('game')
+
+    def select_game_mode(self, mode_selection):
+        self.game_mode = mode_selection
+        if mode_selection == "country":
+            self.start_screen.btn_country_only.change_color('#1976D2')
+            self.start_screen.btn_all_combined.change_color('#78909C')
+        else:
+            self.start_screen.btn_country_only.change_color('#78909C')
+            self.start_screen.btn_all_combined.change_color('#9C27B0')
+
     def on_start(self):
-        # Wait 0.1 seconds for the graphics frame loop to render, then load files and variables safely
         Clock.schedule_once(self.deferred_game_init, 0.1)
         Clock.schedule_once(self.track_only_downloads, 1.5)
 
     def track_only_downloads(self, dt):
-        """Silently logs unique device entries and pulls total game download metrics."""
-        try:
-            from jnius import autoclass
-            Build = autoclass('android.os.Build')
-            raw_device = f"{Build.MANUFACTURER}_{Build.MODEL}".lower().replace(" ", "_")
-        except Exception:
-            raw_device = "desktop_pc_tester"
-
-        # Production-grade stable V2 endpoint parameters
         namespace = "singhakshit_word_game_production"
         local_marker = "download_registered.marker"
         
-        # 1. LOG UNIQUE INSTALL IF MARKER IS NOT FOUND
+        self.fetch_url = f"https://counterapi.dev/{namespace}/total_downloads"
+        increment_url = f"https://counterapi.dev/{namespace}/total_downloads/up"
+
         if not os.path.exists(local_marker):
-            print(f"Unique installation found. Processing metrics registration: {raw_device}")
-            
-            # Fire an entry logger push request sequence using V2 up method
-            UrlRequest(f"https://counterapi.dev{namespace}/total_downloads/up")
-            UrlRequest(f"https://counterapi.dev{namespace}/device_{raw_device}/up",
-                       on_success=lambda req, res: self.mark_download_locally(local_marker))
-        
-        # 2. FETCH AND LIVE RENDER DATA METRICS TO WIDGETS
-        # Pulls live tracking values securely back down into our graphics system
-        UrlRequest(f"https://counterapi.dev{namespace}/total_downloads", 
-                   on_success=self.display_top_downloads,
-                   on_error=self.handle_apk_offline,
-                   on_failure=self.handle_apk_offline)
-    def display_top_downloads(self, req, result):
-        """Parses the stable server structure and updates the layout text."""
+            UrlRequest(increment_url, on_success=lambda req, res: self.confirm_install_and_fetch(local_marker), on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline)
+        else:
+            UrlRequest(self.fetch_url, on_success=self.display_top_downloads, on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline)
+
+    def confirm_install_and_fetch(self, marker_path):
         try:
-            if isinstance(result, str):
-                result = json.loads(result)
-                
-            # Extracts integer tracking counts directly matching V2 JSON specifications
-            total_downloads = result.get('data', {}).get('value', 1)
-            if total_downloads == 0:
-                total_downloads = result.get('count', 1) # Fallback parser
-            
-            if hasattr(self, 'top_download_lbl'):
-                self.top_download_lbl.text = f"Downloads: {total_downloads}"
-        except Exception as e:
-            print(f"Layout update engine exception encountered: {e}")
-            self.handle_apk_offline(req, "Parser Error")
+            with open(marker_path, "w") as f: f.write("registered")
+        except: pass
+        UrlRequest(self.fetch_url, on_success=self.display_top_downloads, on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline)
+
+    def display_top_downloads(self, req, result):
+        try:
+            res = json.loads(result) if isinstance(result, str) else result
+            count = res.get('count', 1)
+            self.start_screen.top_download_lbl.text = f"Downloads: {count if count > 0 else 1}"
+        except:
+            self.start_screen.top_download_lbl.text = "Downloads: 1"
 
     def handle_apk_offline(self, req, error):
-        """Ensures that connection dropouts fail gracefully without altering layout labels."""
-        print(f"APK network tracking request dropped: {error}")
-        if hasattr(self, 'top_download_lbl'):
-            self.top_download_lbl.text = "Downloads: 1"
+        self.start_screen.top_download_lbl.text = "Downloads: 1"
 
     def deferred_game_init(self, dt):
-        # Move all heavy memory/startup allocations here
         self.game_mode = "country"
-        self.active_pool = []
+        self.active_pool = list(self.countries) 
         self.used_countries = []
         self.bot_country = ""
         self.score = 0
         self.best_score = 0
-        self.games_played_streak = 0
+        
+        self.player_lives = 3
+        self.bot_lives = 3
+        self.bot_timeout_count = 0
+        self.bot_is_panicking = False
+        self.bot_panic_cooldown = 0
+        
         self.timer_seconds = 30
         self.timer_event = None
         self.bot_timer_event = None
         self.first_turn = True
 
-        # Loading audio files now runs safely after layout rendering completes
-        self.success_sound = SoundLoader.load('success.wav') if os.path.exists('success.wav') else None
-        self.fail_sound = SoundLoader.load('fail.wav') if os.path.exists('fail.wav') else None
-        self.victory_sound = SoundLoader.load('victory.wav') if os.path.exists('victory.wav') else None
-        print("Deferred engine and audio files loaded successfully!")
+        try:
+            self.success_sound = SoundLoader.load('success.wav') if os.path.exists('success.wav') else None
+            self.fail_sound = SoundLoader.load('fail.wav') if os.path.exists('fail.wav') else None
+            self.victory_sound = SoundLoader.load('victory.wav') if os.path.exists('victory.wav') else None
+            self.hint_sound = SoundLoader.load('him.wav') if os.path.exists('him.wav') else None
+            self.tick_sound = SoundLoader.load('tick.wav') if os.path.exists('tick.wav') else None
+            if self.tick_sound: self.tick_sound.stop()
+        except:
+            self.success_sound = self.fail_sound = self.victory_sound = self.hint_sound = self.tick_sound = None
 
-    def create_stat(self, parent, title, val, color):
-        card = StyledCard(orientation='vertical', padding=dp(5))
-        card.add_widget(Label(text=title, font_size='10sp', color=(0.4,0.4,0.4,1)))
-        v = Label(text=val, font_size='18sp', bold=True, color=get_color_from_hex(color))
-        card.add_widget(v)
-        parent.add_widget(card)
-        return v
+    def refresh_lives_display(self):
+        if self.game_mode == "country":
+            self.gs.lives_lbl.text = "N/A"
+        else:
+            self.gs.lives_lbl.text = f"{self.player_lives} / {self.bot_lives}"
 
-    def add_history_item(self, sender, word, status="correct", error_msg=""):
-        item = HistoryItem(sender=sender, word=word, status=status, error_msg=error_msg)
+    def add_history_item(self, sender, word, status="correct", error_msg="", category_tag=""):
+        item = HistoryItem(sender=sender, word=word, status=status, error_msg=error_msg, category_tag=category_tag)
         item.opacity = 0
-        self.history_layout.add_widget(item)
+        self.gs.history_scroll_layout.add_widget(item)
         Animation(opacity=1, duration=0.2).start(item)
-        Clock.schedule_once(lambda dt: setattr(self.history_scroll, 'scroll_y', 0))
+        Clock.schedule_once(lambda dt: setattr(self.gs.history_scroll, 'scroll_y', 0))
+
+    def trigger_shake(self, widget):
+        orig_x = widget.x
+        shake = (
+            Animation(x=orig_x - dp(15), duration=0.04) +
+            Animation(x=orig_x + dp(15), duration=0.04) +
+            Animation(x=orig_x - dp(8), duration=0.04) +
+            Animation(x=orig_x + dp(8), duration=0.04) +
+            Animation(x=orig_x, duration=0.04)
+        )
+        shake.start(widget)
 
     def handle_turn(self, *args):
-        val = self.user_input.text.strip().lower()
-        if not val or self.user_input.disabled: return
-        self.user_input.text = ""
+        val = self.gs.user_input.text.strip().lower()
+        if not val or self.gs.user_input.disabled: return
+        self.gs.user_input.text = ""
 
-        if val in ["don't know", "don'tknow", "dontknow", "dont know", "skip", "quit"]:
-            self.add_history_item("YOU", "Forgot", status="error", error_msg="Gave Up!")
-            self.game_over("You gave up!")
+        if val in ["don't know", "skip", "quit"]:
+            if self.game_mode == "country":
+                self.add_history_item("YOU", "Forgot", status="error", error_msg="Game Over")
+                if self.fail_sound: self.fail_sound.play()
+                self.game_over("You gave up!")
+            else:
+                self.add_history_item("YOU", "Forgot", status="error", error_msg="Lost 1 Life")
+                if self.fail_sound: self.fail_sound.play()
+                self.deduct_life(player=True, reason="You skipped!")
             return
 
         if not self.first_turn and not val.startswith(self.bot_country[-1]):
-            err = f"Wrong! Starts with {self.bot_country[-1].upper()}"
-            self.instruction.text = err
+            self.gs.instruction.text = f"Wrong! Must start with '{self.bot_country[-1].upper()}'"
             if self.fail_sound: self.fail_sound.play()
-            self.add_history_item("YOU", val or "?", status="error", error_msg=err)
-            self.user_input.disabled = False
+            self.add_history_item("YOU", val or "?", status="error", error_msg="Wrong Starting Letter")
+            self.trigger_shake(self.gs.user_input)
+            self.trigger_shake(self.gs.letter_box)
+            self.trigger_shake(self.gs.instruction)
             return 
         
         if val not in self.active_pool:
-            hint_txt = "Not a valid country!" if self.game_mode == "country" else "Not a valid map item!"
-            self.instruction.text = hint_txt
+            self.gs.instruction.text = "Not recognized in database!"
             if self.fail_sound: self.fail_sound.play()
-            self.add_history_item("YOU", val, status="error", error_msg="Not recognized")
-            self.user_input.disabled = False
+            self.add_history_item("YOU", val, status="error", error_msg="Not Valid")
+            self.trigger_shake(self.gs.user_input)
+            self.trigger_shake(self.gs.letter_box)
+            self.trigger_shake(self.gs.instruction)
             return
 
         if val in self.used_countries:
-            self.instruction.text = "Already used!"
+            self.gs.instruction.text = "Already played!"
             if self.fail_sound: self.fail_sound.play()
-            self.add_history_item("YOU", val, status="warning", error_msg="Already used")
-            self.user_input.disabled = False
+            self.add_history_item("YOU", val, status="warning", error_msg="Repeated Word")
+            self.trigger_shake(self.gs.user_input)
+            self.trigger_shake(self.gs.letter_box)
+            self.trigger_shake(self.gs.instruction)
             return
 
         if self.timer_event: Clock.unschedule(self.timer_event)
         if self.success_sound: self.success_sound.play()
         
-        self.score += 10
-        self.score_lbl.text = str(self.score)
-        self.used_countries.append(val)
-        self.add_history_item("YOU", val, status="correct")
-        self.first_turn = False
-        self.user_input.disabled = True
+        if self.bot_panic_cooldown > 0:
+            self.bot_panic_cooldown -= 1
         
-        self.start_timer()
-        self.instruction.text = "Bot thinking..."
-        if self.bot_timer_event: Clock.unschedule(self.bot_timer_event)
-        self.bot_timer_event = Clock.schedule_once(lambda dt: self.bot_move(val[-1]), random.uniform(1.0, 7))
+        display_tag = self.item_types.get(val, "C") if self.game_mode != "country" else "C"
+        earned_pts = self.point_weights.get(display_tag, 10)
+        self.score += earned_pts
+        self.gs.score_lbl.text = str(self.score)
+        
+        score_pop = Animation(font_size=sp(22), duration=0.12) + Animation(font_size=sp(14), duration=0.1)
+        score_pop.start(self.gs.score_lbl)
 
-    def bot_move(self, char):
-        if self.timer_event: Clock.unschedule(self.timer_event)
+        self.used_countries.append(val)
+        self.add_history_item("YOU", val, status="correct", category_tag=display_tag if self.game_mode != "country" else "")
+        
+        self.first_turn = False
+        self.gs.user_input.disabled = True
+        self.bot_is_panicking = False
+        self.start_timer()
+        self.gs.instruction.text = "Bot thinking..."
+        if self.bot_timer_event: Clock.unschedule(self.bot_timer_event)
+        self.bot_timer_event = Clock.schedule_once(lambda dt: self.bot_check_turn(val[-1]), random.uniform(1.0, 7.5))
+
+    def bot_check_turn(self, char):
         possible = [c for c in self.active_pool if c.startswith(char) and c not in self.used_countries]
+        
         if not possible:
-            if self.victory_sound: self.victory_sound.play()
-            self.instruction.text = "YOU WIN! Bot stuck. ✓"
-            self.last_letter_lbl.text = "[color=#FFC107]W[/color]"
-            self.update_best_score()
-            self.user_input.disabled = True
+            if self.game_mode == "country":
+                if self.timer_event: Clock.unschedule(self.timer_event)
+                if self.bot_timer_event: Clock.unschedule(self.bot_timer_event)
+                try:
+                    if self.tick_sound: self.tick_sound.stop()
+                except: pass
+                
+                if self.victory_sound: self.victory_sound.play()
+                self.gs.instruction.text = "[b][color=#4CAF50]VICTORY![/color][/b]\nBot has no answers left!"
+                self.gs.last_letter_lbl.text = "[color=#FFC107]W[/color]"
+                self.update_best_score()
+                self.gs.user_input.disabled = True
+                
+                self.trigger_shake(self.gs.letter_box)
+                self.trigger_shake(self.gs.instruction)
+            else:
+                self.gs.instruction.text = "Bot stuck! Bot loses a life. [OK]"
+                self.deduct_life(player=False, reason="Bot had no answers left!")
+            return
+
+        if self.game_mode != "country" and self.bot_timeout_count < 2 and self.bot_panic_cooldown == 0 and random.random() < 0.20:
+            self.bot_timeout_count += 1
+            self.bot_panic_cooldown = random.randint(4, 6)
+            self.bot_is_panicking = True
+            self.gs.instruction.text = "Bot looks confused... Time is ticking!"
+            return
+
+        self.bot_move(possible)
+
+    def bot_move(self, possible_options):
+        if self.success_sound: self.success_sound.play()
+
+        # --- SMART BOT LOGIC: Prioritize Countries, Continents, and Capitals over States ---
+        if self.game_mode != "country":
+            premium_options = [c for c in possible_options if self.item_types.get(c, "C") in ["C", "Cap", "Cont"]]
+            fallback_options = [c for c in possible_options if self.item_types.get(c, "C") == "S"]
+
+            if premium_options:
+                self.bot_country = random.choice(premium_options)
+            else:
+                self.bot_country = random.choice(fallback_options)
         else:
-            if self.success_sound: self.success_sound.play()
-            self.bot_country = random.choice(possible)
-            self.used_countries.append(self.bot_country.lower())
-            self.add_history_item("BOT", self.bot_country, status="correct")
-            self.last_letter_lbl.text = self.bot_country[-1].upper()
-            self.instruction.text = f"Bot: {self.bot_country.upper()}"
-            self.user_input.disabled = False
+            self.bot_country = random.choice(possible_options)
+        # ---------------------------------------------------------------------------------
+
+        self.used_countries.append(self.bot_country.lower())
+        
+        display_tag = self.item_types.get(self.bot_country, "C") if self.game_mode != "country" else "C"
+        
+        self.add_history_item("BOT", self.bot_country, status="correct", category_tag=display_tag if self.game_mode != "country" else "")
+        self.gs.last_letter_lbl.text = self.bot_country[-1].upper()
+        
+        self.gs.instruction.text = f"Bot played: {self.bot_country.upper()}"
+        self.gs.user_input.disabled = False
+        self.start_timer()
+
+    def deduct_life(self, player, reason):
+        if self.timer_event: Clock.unschedule(self.timer_event)
+        if self.bot_timer_event: Clock.unschedule(self.bot_timer_event)
+        self.bot_is_panicking = False
+        
+        try:
+            if self.tick_sound: self.tick_sound.stop()
+        except: pass
+
+        if self.game_mode == "country": return
+
+        if player:
+            self.player_lives -= 1
+        else:
+            self.bot_lives -= 1
+            
+        self.refresh_lives_display()
+        
+        if self.player_lives <= 0:
+            if self.fail_sound: self.fail_sound.play()
+            self.add_history_item("YOU", "MATCH OVER", status="error", error_msg="Defeat!")
+            self.game_over("Defeat! You ran out of lives.")
+            self.gs.last_letter_lbl.text = "[color=#FF0000]L[/color]"
+        elif self.bot_lives <= 0:
+            if self.victory_sound: self.victory_sound.play()
+            self.add_history_item("YOU", "VICTORY!", status="correct", error_msg="Match Won!")
+            self.gs.instruction.text = "[b][color=#4CAF50]VICTORY![/color][/b]\nYou completely knocked out the bot!"
+            self.gs.last_letter_lbl.text = "[color=#FFC107]W[/color]"
+            self.update_best_score()
+            self.gs.user_input.disabled = True
+            
+            self.trigger_shake(self.gs.letter_box)
+            self.trigger_shake(self.gs.instruction)
+        else:
+            if not player and self.fail_sound: self.fail_sound.play()
+            self.gs.user_input.disabled = False
+            self.first_turn = True
+            self.gs.instruction.text = f"{reason}! Fresh turn, play any item."
+            self.gs.last_letter_lbl.text = "?"
             self.start_timer()
 
     def start_timer(self):
         if self.timer_event: Clock.unschedule(self.timer_event)
+        try:
+            if self.tick_sound: self.tick_sound.stop()
+        except: pass
         self.timer_seconds = 30
-        self.timer_lbl.text = "30s"
-        self.timer_lbl.font_size = '18sp'
-        self.timer_lbl.color = get_color_from_hex("#4CAF50")
+        self.gs.timer_lbl.text = "30s"
+        self.gs.timer_lbl.font_size = '14sp'
+        self.gs.timer_lbl.color = get_color_from_hex("#4CAF50")
         self.timer_event = Clock.schedule_interval(self.update_timer, 1)
 
     def update_timer(self, dt):
         self.timer_seconds -= 1
-        self.timer_lbl.text = f"{self.timer_seconds}s"
+        self.gs.timer_lbl.text = f"{self.timer_seconds}s"
         
-        if self.timer_seconds <= 20:
-            self.timer_lbl.color = get_color_from_hex("#F44336")
-            if self.timer_seconds % 2 == 0:
-                anim = Animation(font_size=sp(22), duration=0.15) + Animation(font_size=sp(18), duration=0.15)
-                anim.start(self.timer_lbl)
+        if self.timer_seconds <= 15:
+            self.gs.timer_lbl.color = get_color_from_hex("#F44336")
+            try:
+                if self.tick_sound: self.tick_sound.play()
+            except: pass
+            danger_pulse = (Animation(font_size=sp(24), duration=0.12, transition='out_quad') + Animation(font_size=sp(14), duration=0.12, transition='in_quad'))
+            danger_pulse.start(self.gs.timer_lbl)
 
         if self.timer_seconds <= 0:
             if self.timer_event: Clock.unschedule(self.timer_event)
-            self.add_history_item("YOU", "TIMEOUT", status="error", error_msg="Out of time!")
-            self.game_over("Time Out!")
-            self.last_letter_lbl.text = "[color=#FF0000]X[/color]"
+            
+            if self.game_mode == "country":
+                self.add_history_item("YOU", "TIMEOUT", status="error", error_msg="Game Over")
+                if self.fail_sound: self.fail_sound.play()
+                self.game_over("Time Out!")
+                self.gs.last_letter_lbl.text = "[color=#FF0000]X[/color]"
+            else:
+                if self.bot_is_panicking:
+                    self.add_history_item("BOT", "TIMEOUT", status="error", error_msg="Panic Lockout")
+                    if self.fail_sound: self.fail_sound.play()
+                    self.deduct_life(player=False, reason="Bot Timeout")
+                else:
+                    self.add_history_item("YOU", "TIMEOUT", status="error", error_msg="Out of time!")
+                    if self.fail_sound: self.fail_sound.play()
+                    self.deduct_life(player=True, reason="Time Out")
 
     def game_over(self, reason):
-        if self.fail_sound: self.fail_sound.play()
-        self.user_input.disabled = True
+        try:
+            if self.tick_sound: self.tick_sound.stop()
+        except: pass
+        self.gs.user_input.disabled = True
         self.update_best_score()
         if self.timer_event: Clock.unschedule(self.timer_event)
         if self.bot_timer_event: Clock.unschedule(self.bot_timer_event)
 
-        target_char = ""
-        if self.first_turn:
-            target_char = random.choice([c for c in self.active_pool])
-        elif self.bot_country:
-            target_char = self.bot_country[-1]
-
+        target_char = random.choice([c for c in self.active_pool]) if self.first_turn else self.bot_country[-1]
         missed_options = [c for c in self.active_pool if c.startswith(target_char) and c not in self.used_countries]
         if missed_options:
             suggestion = random.choice(missed_options).upper()
-            self.instruction.text = f"{reason} Missed: {suggestion}"
+            self.gs.instruction.text = f"Match Over! Missed suggestion: {suggestion}"
         else:
-            self.instruction.text = f"{reason} No answers left!"
+            self.gs.instruction.text = f"Match Over! No answers left anywhere."
 
     def update_best_score(self):
         if self.score > self.best_score:
             self.best_score = self.score
-            self.best_lbl.text = str(self.best_score)
+            self.gs.best_lbl.text = str(self.best_score)
 
     def restart_game(self, *args):
         if self.timer_event: Clock.unschedule(self.timer_event)
         if self.bot_timer_event: Clock.unschedule(self.bot_timer_event)
+        try:
+            if self.tick_sound: self.tick_sound.stop()
+        except: pass
         
         if self.game_mode == "country":
             self.active_pool = list(self.countries)
-            self.instruction.text = "Enter a country!"
+            self.gs.instruction.text = "Enter a country!"
         else:
             self.active_pool = self.countries + self.continents + self.capitals + self.states
-            self.instruction.text = "Enter Country, Capital,\n Continent, or State!"
+            self.gs.instruction.text = "Enter Country, Capital,\n Continent, or State!"
 
-        self.games_played_streak += 1
-        self.streak_lbl.text = str(self.games_played_streak)
+        self.player_lives = 3
+        self.bot_lives = 3
+        self.bot_timeout_count = 0
+        self.bot_panic_cooldown = 0
+        self.bot_is_panicking = False
+        self.refresh_lives_display()
+        
         self.used_countries = []
         self.score = 0
-        self.score_lbl.text = "0"
-        self.last_letter_lbl.text = "?"
-        self.history_layout.clear_widgets()
-        self.user_input.disabled = False
+        self.gs.score_lbl.text = "0"
+        self.gs.last_letter_lbl.text = "?"
+        self.gs.history_scroll_layout.clear_widgets()
+        self.gs.user_input.disabled = False
         self.first_turn = True
         self.start_timer()
+        
+    def trigger_country_hint(self, *args):
+        if self.score < 50:
+            self.gs.instruction.text = "Locked! You need 50+ score points."
+            if self.fail_sound: self.fail_sound.play()
+            return
+
+        if hasattr(self, 'hint_sound') and self.hint_sound:
+            self.hint_sound.play()
+
+        target_char = ""
+        if not self.first_turn and self.bot_country:
+            target_char = self.bot_country[-1] if self.bot_country[-1] != " " else self.bot_country[-2]
+
+        if target_char:
+            valid_hint_options = [c for c in self.active_pool if c.startswith(target_char) and c not in self.used_countries]
+        else:
+            valid_hint_options = [c for c in self.active_pool if c not in self.used_countries]
+
+        if not valid_hint_options:
+            self.gs.instruction.text = "No countries left for this letter hint!"
+            return
+
+        chosen_hint = random.choice(valid_hint_options).upper()
+        self.score -= 50
+        self.gs.score_lbl.text = str(self.score)
+        self.gs.instruction.text = f"Try typing: {chosen_hint}"
+
+        if hasattr(self.gs, 'hint_btn'):
+            anim = Animation(size=(dp(60), dp(40)), duration=0.1) + Animation(size=(dp(54), dp(36)), duration=0.1)
+            anim.start(self.gs.hint_btn)
 
 if __name__ == '__main__':
     AtlasApp().run()
+    
