@@ -2,6 +2,7 @@ import random
 import os
 import urllib.parse
 import json
+import certifi
 from kivy.network.urlrequest import UrlRequest
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
@@ -370,15 +371,18 @@ class AtlasApp(App):
         increment_url = f"https://counterapi.dev/{namespace}/total_downloads/up"
 
         if not os.path.exists(local_marker):
-            UrlRequest(increment_url, on_success=lambda req, res: self.confirm_install_and_fetch(local_marker), on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline)
+            UrlRequest(increment_url, on_success=lambda req, res: self.confirm_install_and_fetch(local_marker), on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline,
+ca_file=certifi.where())
         else:
-            UrlRequest(self.fetch_url, on_success=self.display_top_downloads, on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline)
+            UrlRequest(self.fetch_url, on_success=self.display_top_downloads, on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline,
+ca_file=certifi.where())
 
     def confirm_install_and_fetch(self, marker_path):
         try:
             with open(marker_path, "w") as f: f.write("registered")
         except: pass
-        UrlRequest(self.fetch_url, on_success=self.display_top_downloads, on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline)
+        UrlRequest(self.fetch_url, on_success=self.display_top_downloads, on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline,
+ca_file=certifi.where())
 
     def display_top_downloads(self, req, result):
         try:
