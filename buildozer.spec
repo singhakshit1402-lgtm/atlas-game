@@ -23,7 +23,7 @@ source.include_exts = py,png,jpg,kv,wav,atlas
 version = 1.0.0
 
 # (list) Application requirements 
-requirements = python3,kivy, requests,plyer,certifi,urllib3
+requirements = python3,kivy,requests,plyer,certifi,urllib3
 
 # (list) Supported orientations
 orientation = portrait
@@ -32,7 +32,7 @@ orientation = portrait
 fullscreen = 1
 # Ensure the line is uncommented (remove any '#' symbol at the front)
 android.permissions = android.permission.INTERNET, android.permission.ACCESS_NETWORK_STATE
-android.permissions = INTERNET
+
 # ==========================================
 # Android specific configuration
 # ==========================================
