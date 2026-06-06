@@ -1,8 +1,6 @@
 import random
 import os
-import urllib.parse
 import json
-import certifi
 from kivy.network.urlrequest import UrlRequest
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
@@ -20,6 +18,13 @@ from kivy.graphics import Color, RoundedRectangle, Rectangle
 from kivy.core.audio import SoundLoader
 from kivy.metrics import dp, sp
 from kivy.animation import Animation
+
+# Safe Certificate Import for Android Web Counters
+try:
+    import certifi
+    CA_CERT = certifi.where()
+except ImportError:
+    CA_CERT = None
 
 Window.softinput_mode = 'below_target'
 Window.clearcolor = get_color_from_hex('#B3E5FC')
@@ -199,17 +204,21 @@ class GameScreen(Screen):
         self.layout.add_widget(stats_grid)
 
         content_area = BoxLayout(orientation='horizontal', size_hint=(0.95, 0.58), pos_hint={'center_x': 0.5, 'top': 0.76}, spacing=dp(15))
-        game_card = StyledCard(orientation='vertical', padding=dp(15), spacing=dp(12), size_hint_x=0.58)
-        game_card.add_widget(Label(text="LAST LETTER", color=(0.5,0.5,0.5,1), size_hint_y=0.1))
+        
+        # FloatLayout wrapper allows safe screen shaking without crashing
+        self.card_wrapper = FloatLayout(size_hint_x=0.58)
+        self.game_card = StyledCard(orientation='vertical', padding=dp(15), spacing=dp(12), size_hint=(1, 1), pos_hint={'center_x': 0.5, 'center_y': 0.5})
+        
+        self.game_card.add_widget(Label(text="LAST LETTER", color=(0.5,0.5,0.5,1), size_hint_y=0.1))
         
         self.letter_box = StyledCard(bg_color='#E3F2FD', radius=[dp(10)], size_hint_y=0.3)
         self.last_letter_lbl = Label(text="?", font_size='80sp', bold=True, color=get_color_from_hex('#1976D2'), markup=True)
         self.letter_box.add_widget(self.last_letter_lbl)
-        game_card.add_widget(self.letter_box)
+        self.game_card.add_widget(self.letter_box)
 
         self.instruction = Label(text="Enter an item!", color=(0,0,0,1), markup=True, font_size='13sp', halign='center', valign='middle', size_hint_y=0.1)
         self.instruction.bind(size=lambda x, s: setattr(x, 'text_size', (x.width, x.height)))
-        game_card.add_widget(self.instruction)
+        self.game_card.add_widget(self.instruction)
 
         hint_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(40), spacing=dp(10), padding=[0, dp(4)])
         hint_info_lbl = Label(text="Need a country? (Costs 50 pts)", font_size='11sp', color=(0.4, 0.4, 0.4, 1), halign='left', valign='middle')
@@ -220,16 +229,18 @@ class GameScreen(Screen):
         self.hint_btn = StyledButton(text=hint_btn_text, markup=True, font_size='12sp', color=(0,0,0,1), bg_color='#FFC107', size_hint=(None, None), size=(dp(54), dp(36)), radius=[dp(10)])
         self.hint_btn.bind(on_release=lambda x: App.get_running_app().trigger_country_hint())
         hint_row.add_widget(self.hint_btn)
-        game_card.add_widget(hint_row)
+        self.game_card.add_widget(hint_row)
         
         self.user_input = TextInput(hint_text="Type response here...", multiline=False, size_hint_y=None, height=dp(55), padding=[dp(10), dp(15)])
         self.user_input.bind(on_text_validate=lambda x: App.get_running_app().handle_turn())
-        game_card.add_widget(self.user_input)
+        self.game_card.add_widget(self.user_input)
 
         self.submit_btn = StyledButton(text="SUBMIT", bold=True, bg_color='#9CEF43', size_hint_y=None, height=dp(50))
         self.submit_btn.bind(on_release=lambda x: App.get_running_app().handle_turn())
-        game_card.add_widget(self.submit_btn)
-        content_area.add_widget(game_card)
+        self.game_card.add_widget(self.submit_btn)
+        
+        self.card_wrapper.add_widget(self.game_card)
+        content_area.add_widget(self.card_wrapper)
 
         history_card = StyledCard(orientation='vertical', padding=dp(10), size_hint_x=0.42)
         history_card.add_widget(Label(text="RESPONSE HISTORY", bold=True, color=get_color_from_hex('#1976D2'), size_hint_y=0.08, font_size='12sp'))
@@ -275,7 +286,7 @@ class GameScreen(Screen):
 # --- MAIN APP ---
 class AtlasApp(App):
     def build(self):
-        self.countries = ["afghanistan", "albania", "algeria","america", "andorra", "angola","antigua & deps", "argentina", "armenia", "australia", "austria","azerbaijan", "bahamas", "bahrain", "bangladesh", "barbados","belarus", "belgium", "belize", "benin", "bhutan","bolivia", "bosnia herzegovina", "botswana", "brazil","brunei","bulgaria", "burkina", "burundi", "cambodia", "cameroon","canada", "cape verde", "central african rep", "chad", "chile","china", "colombia", "comoros", "congo", "cong","costa rica", "croatia", "cuba", "cyprus", "czech republic","denmark", "djibouti", "dominica", "dominican republic", "east timor","ecuador", "egypt", "el salvador", "equatorial guinea", "eritrea","estonia", "ethiopia", "fiji", "finland", "france","gabon", "gambia", "georgia", "germany", "ghana","greece", "grenada", "guatemala", "guinea", "guinea-bissau","guyana", "haiti", "honduras", "hungary", "iceland","india", "indonesia", "iran", "iraq", "ireland","israel", "italy", "ivory coast", "jamaica", "japan","jordan", "kazakhstan", "kenya", "kiribati", "north korea","south korea", "kosovo", "kuwait", "kyrgyzstan", "laos","latvia", "lebanon", "lesotho", "liberia", "libya","liechtenstein", "lithuania", "luxembourg", "macedonia", "madagascar","malawi", "malaysia", "maldives", "mali", "malta","marshall islands", "mauritania", "mauritius", "mexico", "micronesia","moldova", "monaco", "mongolia", "montenegro", "morocco","mozambique", "myanmar", "namibia", "nauru", "nepal","netherlands", "new zealand", "nicaragua", "niger", "nigeria","norway", "oman", "pakistan", "palau", "panama","papua new guinea", "paraguay", "peru", "philippines", "poland","portugal", "qatar", "romania", "russia", "rwanda","st kitts & nevis", "st lucia", "saint vincent & the grenadines","samoa", "san marino", "sao tome & principe", "saudi arabia","senegal", "serbia", "seychelles", "sierra leone", "singapore","slovakia", "slovenia", "solomon islands","somalia", "south africa","south sudan", "spain", "sri lanka", "sudan", "suriname","swaziland", "sweden", "switzerland", "syria", "taiwan","tajikistan", "tanzania", "thailand", "togo", "tonga","trinidad & tobago", "tunisia", "turkey", "turkmenistan", "tuvalu","uganda", "ukraine", "united arab emirates", "united kingdom","united states", "uruguay", "uzbekistan", "vanuatu","vatican city", "venezuela", "vietnam", "yemen","zambia", "zimbabwe",]
+        self.countries = ["afghanistan", "albania", "algeria","america", "andorra", "angola","antigua & deps", "argentina", "armenia", "australia", "austria","azerbaijan", "bahamas", "bahrain", "bangladesh", "barbados","belarus", "belgium", "belize", "benin", "bhutan","bolivia", "bosnia herzegovina", "botswana", "brazil","brunei","bulgaria", "burkina", "burundi", "cambodia", "cameroon","canada", "cape verde", "central african rep", "chad", "chile","china", "colombia", "comoros", "congo", "cong","costa rica", "croatia", "cuba", "cyprus", "czech republic","denmark", "djibouti", "dominica", "dominican republic", "east timor","ecuador", "egypt", "el salvador", "equatorial guinea", "eritrea","estonia", "ethiopia", "fiji", "finland", "france","gabon", "gambia", "georgia", "germany", "ghana","greece", "grenada", "guatemala", "guinea", "guinea-bissau","guyana", "haiti", "honduras", "hungary", "iceland","india", "indonesia", "iran", "iraq", "ireland","israel", "italy", "ivory coast", "jamaica", "japan","jordan", "kazakhstan", "kenya", "kiribati", "north korea","south korea", "kosovo", "kuwait", "kyrgyzstan", "laos","latvia", "lebanon", "lesotho", "liberia", "libya","liechtenstein", "lithuania", "luxembourg", "macedonia", "madagascar","malawi", "malaysia", "maldives", "mali", "malta","marshall islands", "mauritania", "mauritius", "mexico", "micronesia","moldova", "monaco", "mongolia", "montenegro", "morocco","mozambique", "myanmar", "namibia", "nauru", "nepal","netherlands", "new zealand", "nicaragua", "niger", "nigeria","norway", "oman", "pakistan", "palau", "panama","papua new guinea", "paraguay", "peru", "philippines", "poland","portugal", "qatar", "romania", "russia", "rwanda","st kitts & nevis", "st lucia", "saint vincent & the grenadines","samoa", "san marino", "sao tome & principe", "saudi arabia","senegal", "serbia", "seychelles", "sierra leone", "singapore","slovakia", "slovenia", "solomon islands","somalia", "south africa","south sudan", "spain", "sri lanka", "sudan", "suriname","swaziland", "sweden", "switzerland", "syria", "taiwan","tajikistan", "tanzania", "thailand", "togo", "tonga","trinidad & tobago", "tunisia", "turkey", "turkmenistan", "tuvalu","uganda", "ukraine", "united arab emirates", "united kingdom","united states", "uruguay", "uzbekistan", "vanuatu","vatican city", "venezuela", "vietnam", "yemen","zambia", "zimbabwe"]
         self.continents = ["asia", "africa", "north america", "south america", "antarctica", "europe", "australia"]
         self.capitals = ["algiers", "luanda", "porto-novo", "gaborone", "praia", "yaounde", "bangui", "moroni", "cairo", "djibouti", "asmara", "malabo", "libreville", "accra", "conakry", "bissau", "nairobi", "maseru", "monrovia", "tripoli", "antananarivo", "lilongwe", "bamako", "nouakchott", "port louis", "rabat", "maputo", "windhoek", "niamey", "abuja", "kigali", "dakar", "victoria", "freetown", "mogadishu", "pretoria", "juba", "khartoum", "dodoma", "lome", "tunis", "kampala", "lusaka", "harare", "kabul", "yerevan", "baku", "manama", "dhaka", "thimphu", "beijing", "nicosia", "tbilisi", "new delhi", "delhi", "jakarta", "tehran", "baghdad", "tokyo", "amman", "astana", "kuwait city", "bishkek", "vientiane", "beirut", "kuala lumpur", "male", "ulaanbaatar", "kathmandu", "pyongyang", "muscat", "islamabad", "manila", "doha", "riyadh", "singapore", "seoul", "damascus", "taipei", "dushanbe", "bangkok", "dili", "ankara", "ashgabat", "abu dhabi", "tashkent", "hanoi", "sanaa", "tirana", "vienna", "minsk", "brussels", "sofia", "zagreb", "prague", "copenhagen", "tallinn", "helsinki", "paris", "berlin", "athens", "budapest", "reykjavik", "dublin", "rome", "riga", "vilnius", "luxembourg", "valletta", "chisinau", "monaco", "amsterdam", "oslo", "warsaw", "lisbon", "bucharest", "moscow", "san marino", "belgrade", "bratislava", "ljubljana", "madrid", "stockholm", "bern", "kyiv", "london", "vatican city", "ottawa", "havana", "mexico city", "washington", "canberra", "wellington", "buenos aires", "brasília", "santiago", "bogota", "quito", "asuncion", "lima", "paramaribo", "montevideo", "caracas"]
         self.states = [#india
@@ -367,30 +378,50 @@ class AtlasApp(App):
         namespace = "singhakshit_word_game_production"
         local_marker = "download_registered.marker"
         
-        self.fetch_url = f"https://counterapi.dev/{namespace}/total_downloads"
-        increment_url = f"https://counterapi.dev/{namespace}/total_downloads/up"
+        self.fetch_url = f"https://api.counterapi.dev/v1/{namespace}/total_downloads"
+        increment_url = f"https://api.counterapi.dev/v1/{namespace}/total_downloads/up"
 
         if not os.path.exists(local_marker):
-            UrlRequest(increment_url, on_success=lambda req, res: self.confirm_install_and_fetch(local_marker), on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline,
-ca_file=certifi.where())
+            UrlRequest(
+                increment_url, 
+                on_success=lambda req, res: self.confirm_install_and_fetch(local_marker), 
+                on_error=self.handle_apk_offline, 
+                on_failure=self.handle_apk_offline,
+                ca_file=CA_CERT if CA_CERT else None
+            )
         else:
-            UrlRequest(self.fetch_url, on_success=self.display_top_downloads, on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline,
-ca_file=certifi.where())
+            UrlRequest(
+                self.fetch_url, 
+                on_success=self.display_top_downloads, 
+                on_error=self.handle_apk_offline, 
+                on_failure=self.handle_apk_offline,
+                ca_file=CA_CERT if CA_CERT else None
+            )
 
     def confirm_install_and_fetch(self, marker_path):
         try:
             with open(marker_path, "w") as f: f.write("registered")
         except: pass
-        UrlRequest(self.fetch_url, on_success=self.display_top_downloads, on_error=self.handle_apk_offline, on_failure=self.handle_apk_offline,
-ca_file=certifi.where())
+        UrlRequest(
+            self.fetch_url, 
+            on_success=self.display_top_downloads, 
+            on_error=self.handle_apk_offline, 
+            on_failure=self.handle_apk_offline,
+            ca_file=CA_CERT if CA_CERT else None
+        )
 
     def display_top_downloads(self, req, result):
         try:
-            res = json.loads(result) if isinstance(result, str) else result
-            count = res.get('count', 1)
-            self.start_screen.top_download_lbl.text = f"Downloads: {count if count > 0 else 1}"
-        except:
-            self.start_screen.top_download_lbl.text = "Parse Error!"
+            if type(result) is dict:
+                count = result.get('count', result.get('value', 1))
+            else:
+                res = json.loads(result)
+                count = res.get('count', res.get('value', 1))
+                
+            self.start_screen.top_download_lbl.text = f"Downloads: {count}"
+        except Exception as e:
+            safe_message = str(result).replace("\n", "")[:25]
+            self.start_screen.top_download_lbl.text = f"API: {safe_message}"
 
     def handle_apk_offline(self, req, error):
         self.start_screen.top_download_lbl.text = "Net Error!"
@@ -437,16 +468,17 @@ ca_file=certifi.where())
         Animation(opacity=1, duration=0.2).start(item)
         Clock.schedule_once(lambda dt: setattr(self.gs.history_scroll, 'scroll_y', 0))
 
-    def trigger_shake(self, widget):
-        orig_x = widget.x
+    def trigger_shake(self):
+        card = self.gs.game_card
+        Animation.cancel_all(card)
         shake = (
-            Animation(x=orig_x - dp(15), duration=0.04) +
-            Animation(x=orig_x + dp(15), duration=0.04) +
-            Animation(x=orig_x - dp(8), duration=0.04) +
-            Animation(x=orig_x + dp(8), duration=0.04) +
-            Animation(x=orig_x, duration=0.04)
+            Animation(pos_hint={'center_x': 0.47}, duration=0.04) +
+            Animation(pos_hint={'center_x': 0.53}, duration=0.04) +
+            Animation(pos_hint={'center_x': 0.48}, duration=0.04) +
+            Animation(pos_hint={'center_x': 0.52}, duration=0.04) +
+            Animation(pos_hint={'center_x': 0.5}, duration=0.04)
         )
-        shake.start(widget)
+        shake.start(card)
 
     def handle_turn(self, *args):
         val = self.gs.user_input.text.strip().lower()
@@ -468,29 +500,24 @@ ca_file=certifi.where())
             self.gs.instruction.text = f"Wrong! Must start with '{self.bot_country[-1].upper()}'"
             if self.fail_sound: self.fail_sound.play()
             self.add_history_item("YOU", val or "?", status="error", error_msg="Wrong Starting Letter")
-            self.trigger_shake(self.gs.user_input)
-            self.trigger_shake(self.gs.letter_box)
-            self.trigger_shake(self.gs.instruction)
+            self.trigger_shake()
             return 
         
         if val not in self.active_pool:
             self.gs.instruction.text = "Not recognized in database!"
             if self.fail_sound: self.fail_sound.play()
             self.add_history_item("YOU", val, status="error", error_msg="Not Valid")
-            self.trigger_shake(self.gs.user_input)
-            self.trigger_shake(self.gs.letter_box)
-            self.trigger_shake(self.gs.instruction)
+            self.trigger_shake()
             return
 
         if val in self.used_countries:
             self.gs.instruction.text = "Already played!"
             if self.fail_sound: self.fail_sound.play()
             self.add_history_item("YOU", val, status="warning", error_msg="Repeated Word")
-            self.trigger_shake(self.gs.user_input)
-            self.trigger_shake(self.gs.letter_box)
-            self.trigger_shake(self.gs.instruction)
+            self.trigger_shake()
             return
 
+        # CORRECT ANSWER LOGIC
         if self.timer_event: Clock.unschedule(self.timer_event)
         if self.success_sound: self.success_sound.play()
         
@@ -533,8 +560,7 @@ ca_file=certifi.where())
                 self.update_best_score()
                 self.gs.user_input.disabled = True
                 
-                self.trigger_shake(self.gs.letter_box)
-                self.trigger_shake(self.gs.instruction)
+                self.trigger_shake()
             else:
                 self.gs.instruction.text = "Bot stuck! Bot loses a life. [OK]"
                 self.deduct_life(player=False, reason="Bot had no answers left!")
@@ -552,7 +578,7 @@ ca_file=certifi.where())
     def bot_move(self, possible_options):
         if self.success_sound: self.success_sound.play()
 
-        # --- SMART BOT LOGIC: Prioritize Countries, Continents, and Capitals over States ---
+        # SMART BOT LOGIC: Prioritize Countries, Continents, and Capitals over States
         if self.game_mode != "country":
             premium_options = [c for c in possible_options if self.item_types.get(c, "C") in ["C", "Cap", "Cont"]]
             fallback_options = [c for c in possible_options if self.item_types.get(c, "C") == "S"]
@@ -563,7 +589,6 @@ ca_file=certifi.where())
                 self.bot_country = random.choice(fallback_options)
         else:
             self.bot_country = random.choice(possible_options)
-        # ---------------------------------------------------------------------------------
 
         self.used_countries.append(self.bot_country.lower())
         
@@ -607,8 +632,7 @@ ca_file=certifi.where())
             self.update_best_score()
             self.gs.user_input.disabled = True
             
-            self.trigger_shake(self.gs.letter_box)
-            self.trigger_shake(self.gs.instruction)
+            self.trigger_shake()
         else:
             if not player and self.fail_sound: self.fail_sound.play()
             self.gs.user_input.disabled = False
@@ -743,4 +767,3 @@ ca_file=certifi.where())
 
 if __name__ == '__main__':
     AtlasApp().run()
-    
