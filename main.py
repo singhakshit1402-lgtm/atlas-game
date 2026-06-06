@@ -390,10 +390,10 @@ ca_file=certifi.where())
             count = res.get('count', 1)
             self.start_screen.top_download_lbl.text = f"Downloads: {count if count > 0 else 1}"
         except:
-            self.start_screen.top_download_lbl.text = "Downloads: 1"
+            self.start_screen.top_download_lbl.text = "Parse Error!"
 
     def handle_apk_offline(self, req, error):
-        self.start_screen.top_download_lbl.text = "Downloads: 1"
+        self.start_screen.top_download_lbl.text = "Net Error!"
 
     def deferred_game_init(self, dt):
         self.game_mode = "country"
