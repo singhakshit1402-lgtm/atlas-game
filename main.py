@@ -1,7 +1,6 @@
 import random
 import os
-import json
-from kivy.network.urlrequest import UrlRequest
+import webbrowser
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
@@ -147,10 +146,21 @@ class StartScreen(Screen):
         play_btn.bind(on_release=self.go_to_game)
         layout.add_widget(play_btn)
         
-        download_badge = StyledCard(bg_color='#0D47A1', radius=[dp(12)], orientation='horizontal', padding=[dp(10), dp(4), dp(10), dp(4)], size_hint=(None, None), size=(dp(140), dp(34)), pos_hint={'center_x': 0.5, 'center_y': 0.23})
-        self.top_download_lbl = Label(text="Downloads: ...", font_size='12sp', bold=True, color=(1, 1, 1, 1), halign='center', valign='middle')
-        download_badge.add_widget(self.top_download_lbl)
-        layout.add_widget(download_badge)
+        # THE ZERO-RISK STATS BUTTON (NOW POINTING TO THE RAW API DATA)
+        stats_btn = StyledButton(
+            text="📊 Live Game Stats", 
+            bold=True, 
+            font_size='13sp', 
+            bg_color='#0D47A1', 
+            size_hint=(None, None), 
+            size=(dp(160), dp(38)), 
+            pos_hint={'center_x': 0.5, 'center_y': 0.23}, 
+            radius=[dp(12)]
+        )
+        
+        # This link skips the dashboard and shows the direct {"value": X} string
+        stats_btn.bind(on_release=lambda x: webbrowser.open("https://api.counterapi.dev/v1/singhakshit_word_game_production/total_downloads"))
+        layout.add_widget(stats_btn)
 
         mode_box = BoxLayout(orientation='horizontal', size_hint=(0.85, 0.08), pos_hint={'center_x': 0.5, 'center_y': 0.14}, spacing=dp(12))
         self.btn_country_only = StyledButton(text="Countries Only", bold=True, font_size='13sp', bg_color='#1976D2', radius=[dp(10)])
@@ -198,7 +208,6 @@ class GameScreen(Screen):
 
         content_area = BoxLayout(orientation='horizontal', size_hint=(0.95, 0.58), pos_hint={'center_x': 0.5, 'top': 0.76}, spacing=dp(15))
         
-        # FloatLayout wrapper allows safe screen shaking without crashing
         self.card_wrapper = FloatLayout(size_hint_x=0.58)
         self.game_card = StyledCard(orientation='vertical', padding=dp(15), spacing=dp(12), size_hint=(1, 1), pos_hint={'center_x': 0.5, 'center_y': 0.5})
         
@@ -279,7 +288,7 @@ class GameScreen(Screen):
 # --- MAIN APP ---
 class AtlasApp(App):
     def build(self):
-        self.countries = [ "afghanistan", "albania", "algeria","america", "andorra", "angola","antigua & deps", "argentina", "armenia", "australia", "austria","azerbaijan", "bahamas", "bahrain", "bangladesh", "barbados","belarus", "belgium", "belize", "benin", "bhutan","bolivia", "bosnia herzegovina", "botswana", "brazil","brunei","bulgaria", "burkina", "burundi", "cambodia", "cameroon","canada", "cape verde", "central african rep", "chad", "chile","china", "colombia", "comoros", "congo", "cong","costa rica", "croatia", "cuba", "cyprus", "czech republic","denmark", "djibouti", "dominica", "dominican republic", "east timor","ecuador", "egypt", "el salvador", "equatorial guinea", "eritrea","estonia", "ethiopia", "fiji", "finland", "france","gabon", "gambia", "georgia", "germany", "ghana","greece", "grenada", "guatemala", "guinea", "guinea-bissau","guyana", "haiti", "honduras", "hungary", "iceland","india", "indonesia", "iran", "iraq", "ireland","israel", "italy", "ivory coast", "jamaica", "japan","jordan", "kazakhstan", "kenya", "kiribati", "north korea","south korea", "kosovo", "kuwait", "kyrgyzstan", "laos","latvia", "lebanon", "lesotho", "liberia", "libya","liechtenstein", "lithuania", "luxembourg", "macedonia", "madagascar","malawi", "malaysia", "maldives", "mali", "malta","marshall islands", "mauritania", "mauritius", "mexico", "micronesia","moldova", "monaco", "mongolia", "montenegro", "morocco","mozambique", "myanmar", "namibia", "nauru", "nepal","netherlands", "new zealand", "nicaragua", "niger", "nigeria","norway", "oman", "pakistan", "palau", "panama","papua new guinea", "paraguay", "peru", "philippines", "poland","portugal", "qatar", "romania", "russia", "rwanda","st kitts & nevis", "st lucia", "saint vincent & the grenadines","samoa", "san marino", "sao tome & principe", "saudi arabia","senegal", "serbia", "seychelles", "sierra leone", "singapore","slovakia", "slovenia", "solomon islands","somalia", "south africa","south sudan", "spain", "sri lanka", "sudan", "suriname","swaziland", "sweden", "switzerland", "syria", "taiwan","tajikistan", "tanzania", "thailand", "togo", "tonga","trinidad & tobago", "tunisia", "turkey", "turkmenistan", "tuvalu","uganda", "ukraine", "united arab emirates", "united kingdom","united states", "uruguay", "uzbekistan", "vanuatu","vatican city", "venezuela", "vietnam", "yemen","zambia", "zimbabwe"]
+        self.countries = ["afghanistan", "albania", "algeria","america", "andorra", "angola","antigua & deps", "argentina", "armenia", "australia", "austria","azerbaijan", "bahamas", "bahrain", "bangladesh", "barbados","belarus", "belgium", "belize", "benin", "bhutan","bolivia", "bosnia herzegovina", "botswana", "brazil","brunei","bulgaria", "burkina", "burundi", "cambodia", "cameroon","canada", "cape verde", "central african rep", "chad", "chile","china", "colombia", "comoros", "congo", "cong","costa rica", "croatia", "cuba", "cyprus", "czech republic","denmark", "djibouti", "dominica", "dominican republic", "east timor","ecuador", "egypt", "el salvador", "equatorial guinea", "eritrea","estonia", "ethiopia", "fiji", "finland", "france","gabon", "gambia", "georgia", "germany", "ghana","greece", "grenada", "guatemala", "guinea", "guinea-bissau","guyana", "haiti", "honduras", "hungary", "iceland","india", "indonesia", "iran", "iraq", "ireland","israel", "italy", "ivory coast", "jamaica", "japan","jordan", "kazakhstan", "kenya", "kiribati", "north korea","south korea", "kosovo", "kuwait", "kyrgyzstan", "laos","latvia", "lebanon", "lesotho", "liberia", "libya","liechtenstein", "lithuania", "luxembourg", "macedonia", "madagascar","malawi", "malaysia", "maldives", "mali", "malta","marshall islands", "mauritania", "mauritius", "mexico", "micronesia","moldova", "monaco", "mongolia", "montenegro", "morocco","mozambique", "myanmar", "namibia", "nauru", "nepal","netherlands", "new zealand", "nicaragua", "niger", "nigeria","norway", "oman", "pakistan", "palau", "panama","papua new guinea", "paraguay", "peru", "philippines", "poland","portugal", "qatar", "romania", "russia", "rwanda","st kitts & nevis", "st lucia", "saint vincent & the grenadines","samoa", "san marino", "sao tome & principe", "saudi arabia","senegal", "serbia", "seychelles", "sierra leone", "singapore","slovakia", "slovenia", "solomon islands","somalia", "south africa","south sudan", "spain", "sri lanka", "sudan", "suriname","swaziland", "sweden", "switzerland", "syria", "taiwan","tajikistan", "tanzania", "thailand", "togo", "tonga","trinidad & tobago", "tunisia", "turkey", "turkmenistan", "tuvalu","uganda", "ukraine", "united arab emirates", "united kingdom","united states", "uruguay", "uzbekistan", "vanuatu","vatican city", "venezuela", "vietnam", "yemen","zambia", "zimbabwe"]
         self.continents = ["asia", "africa", "north america", "south america", "antarctica", "europe", "australia"]
         self.capitals = ["algiers", "luanda", "porto-novo", "gaborone", "praia", "yaounde", "bangui", "moroni", "cairo", "djibouti", "asmara", "malabo", "libreville", "accra", "conakry", "bissau", "nairobi", "maseru", "monrovia", "tripoli", "antananarivo", "lilongwe", "bamako", "nouakchott", "port louis", "rabat", "maputo", "windhoek", "niamey", "abuja", "kigali", "dakar", "victoria", "freetown", "mogadishu", "pretoria", "juba", "khartoum", "dodoma", "lome", "tunis", "kampala", "lusaka", "harare", "kabul", "yerevan", "baku", "manama", "dhaka", "thimphu", "beijing", "nicosia", "tbilisi", "new delhi", "delhi", "jakarta", "tehran", "baghdad", "tokyo", "amman", "astana", "kuwait city", "bishkek", "vientiane", "beirut", "kuala lumpur", "male", "ulaanbaatar", "kathmandu", "pyongyang", "muscat", "islamabad", "manila", "doha", "riyadh", "singapore", "seoul", "damascus", "taipei", "dushanbe", "bangkok", "dili", "ankara", "ashgabat", "abu dhabi", "tashkent", "hanoi", "sanaa", "tirana", "vienna", "minsk", "brussels", "sofia", "zagreb", "prague", "copenhagen", "tallinn", "helsinki", "paris", "berlin", "athens", "budapest", "reykjavik", "dublin", "rome", "riga", "vilnius", "luxembourg", "valletta", "chisinau", "monaco", "amsterdam", "oslo", "warsaw", "lisbon", "bucharest", "moscow", "san marino", "belgrade", "bratislava", "ljubljana", "madrid", "stockholm", "bern", "kyiv", "london", "vatican city", "ottawa", "havana", "mexico city", "washington", "canberra", "wellington", "buenos aires", "brasília", "santiago", "bogota", "quito", "asuncion", "lima", "paramaribo", "montevideo", "caracas"]
         self.states = [#india
@@ -296,7 +305,7 @@ class AtlasApp(App):
 #Germany
 "bavaria", "berlin", "brandenburg", "bremen", "hamburg", "hesse", "saarland", "saxony", "thuringia",
 #Brazil
-"acre", "alagoas", "amapa", "amazonas", "bahia", "ceara", "distrito federal", "espirito santo", "goias", "maranhao", "mato grosso" , "minas gerais", "para", "paraiba", "parana", "pernambuco", "piaui", "rio de janeiro", "rio grande do norte", "rio grande do sul", "rondonia", "roraima", "santa catarina", "sao paulo", "sergipe", "tocantins",
+"acre", "alagoas", "amapa", "amazonas", "bahia", "ceara", "distrito federal", "espirito santo", "goias", "maranhao", "mato grosso", "minas gerais", "para", "paraiba", "parana", "pernambuco", "piaui", "rio de janeiro", "rio grande do norte", "rio grande do sul", "rondonia", "roraima", "santa catarina", "sao paulo", "sergipe", "tocantins",
 #mexico
 "aguascalientes", "baja california", "campeche", "chiapas", "chihuahua", "coahuila", "colima", "durango", "guanajuato", "guerrero", "hidalgo", "jalisco", "mexico", "michoacan", "morelos", "nayarit", "nuevo leon", "oaxaca", "puebla", "queretaro", "sinaloa", "sonora", "tabasco", "tamaulipas", "tlaxcala", "veracruz", "yucatan", "zacatecas",
 #chinese
@@ -307,7 +316,7 @@ class AtlasApp(App):
 #pakistan
 "sindh","khyber pakhtunkhwa","balochistan","islamabad",
 #indonesia
-"aceh","riau","jambi","sumatra","bengkulu","lampung","riau islands","dki jakarta","yogyakarta","banten","bali","kalimantan","sulawesi","gorontalo","maluku","papua",
+"aceh","riau","jambi","sumatra","bengkulu","lampung","riau islands","dki jakarta","yogyakarta","banten","bali","west nusa tenggara","kalimantan","sulawesi","gorontalo","maluku","papua",
 #france
 "brittany", "corsica","normandy", "occitanie", "guadeloupe", "martinique", "guyane","mayotte","paris"
 #italy
@@ -361,73 +370,6 @@ class AtlasApp(App):
 
     def on_start(self):
         Clock.schedule_once(self.deferred_game_init, 0.1)
-        Clock.schedule_once(self.track_only_downloads, 1.5)
-
-    def track_only_downloads(self, dt):
-        namespace = "singhakshit_word_game_production"
-        local_marker = "download_registered.marker"
-        
-        self.fetch_url = f"https://api.counterapi.dev/v1/{namespace}/total_downloads"
-        increment_url = f"https://api.counterapi.dev/v1/{namespace}/total_downloads/up"
-
-        # 1. The Watchdog Timer
-        Clock.schedule_once(self.rescue_stuck_network, 6.0)
-
-        # 2. Network Requests with verify=False and timeout=5
-        if not os.path.exists(local_marker):
-            UrlRequest(
-                increment_url, 
-                on_success=lambda req, res: self.confirm_install_and_fetch(local_marker), 
-                on_error=self.handle_apk_offline, 
-                on_failure=self.handle_apk_offline,
-                on_redirect=self.handle_apk_offline,
-                verify=False,
-                timeout=5
-            )
-        else:
-            UrlRequest(
-                self.fetch_url, 
-                on_success=self.display_top_downloads, 
-                on_error=self.handle_apk_offline, 
-                on_failure=self.handle_apk_offline,
-                on_redirect=self.handle_apk_offline,
-                verify=False,
-                timeout=5
-            )
-
-    def rescue_stuck_network(self, dt):
-        if hasattr(self, 'start_screen') and self.start_screen.top_download_lbl.text == "Downloads: ...":
-            self.start_screen.top_download_lbl.text = "Offline Mode"
-
-    def confirm_install_and_fetch(self, marker_path):
-        try:
-            with open(marker_path, "w") as f: f.write("registered")
-        except: pass
-        UrlRequest(
-            self.fetch_url, 
-            on_success=self.display_top_downloads, 
-            on_error=self.handle_apk_offline, 
-            on_failure=self.handle_apk_offline,
-            on_redirect=self.handle_apk_offline,
-            verify=False,
-            timeout=5
-        )
-
-    def display_top_downloads(self, req, result):
-        try:
-            if type(result) is dict:
-                count = result.get('count', result.get('value', 1))
-            else:
-                res = json.loads(result)
-                count = res.get('count', res.get('value', 1))
-                
-            self.start_screen.top_download_lbl.text = f"Downloads: {count}"
-        except Exception as e:
-            safe_message = str(result).replace("\n", "")[:25]
-            self.start_screen.top_download_lbl.text = f"API: {safe_message}"
-
-    def handle_apk_offline(self, req, error):
-        self.start_screen.top_download_lbl.text = "Offline Mode"
 
     def deferred_game_init(self, dt):
         self.game_mode = "country"
