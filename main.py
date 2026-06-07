@@ -296,7 +296,7 @@ class AtlasApp(App):
 #Germany
 "bavaria", "berlin", "brandenburg", "bremen", "hamburg", "hesse", "saarland", "saxony", "thuringia",
 #Brazil
-"acre", "alagoas", "amapa", "amazonas", "bahia", "ceara", "distrito federal", "espirito santo", "goias", "maranhao", "mato grosso", , "minas gerais", "para", "paraiba", "parana", "pernambuco", "piaui", "rio de janeiro", "rio grande do norte", "rio grande do sul", "rondonia", "roraima", "santa catarina", "sao paulo", "sergipe", "tocantins",
+"acre", "alagoas", "amapa", "amazonas", "bahia", "ceara", "distrito federal", "espirito santo", "goias", "maranhao", "mato grosso" , "minas gerais", "para", "paraiba", "parana", "pernambuco", "piaui", "rio de janeiro", "rio grande do norte", "rio grande do sul", "rondonia", "roraima", "santa catarina", "sao paulo", "sergipe", "tocantins",
 #mexico
 "aguascalientes", "baja california", "campeche", "chiapas", "chihuahua", "coahuila", "colima", "durango", "guanajuato", "guerrero", "hidalgo", "jalisco", "mexico", "michoacan", "morelos", "nayarit", "nuevo leon", "oaxaca", "puebla", "queretaro", "sinaloa", "sonora", "tabasco", "tamaulipas", "tlaxcala", "veracruz", "yucatan", "zacatecas",
 #chinese
@@ -307,7 +307,7 @@ class AtlasApp(App):
 #pakistan
 "sindh","khyber pakhtunkhwa","balochistan","islamabad",
 #indonesia
-"aceh","riau","jambi","sumatra","bengkulu","lampung","riau islands","dki jakarta","yogyakarta","banten","bali","west nusa tenggara","kalimantan","sulawesi","gorontalo","maluku","papua",
+"aceh","riau","jambi","sumatra","bengkulu","lampung","riau islands","dki jakarta","yogyakarta","banten","bali","kalimantan","sulawesi","gorontalo","maluku","papua",
 #france
 "brittany", "corsica","normandy", "occitanie", "guadeloupe", "martinique", "guyane","mayotte","paris"
 #italy
