@@ -1,6 +1,7 @@
 import random
 import os
-import webbrowser
+import json
+from plyer import tts  
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
@@ -17,6 +18,7 @@ from kivy.graphics import Color, RoundedRectangle, Rectangle
 from kivy.core.audio import SoundLoader
 from kivy.metrics import dp, sp
 from kivy.animation import Animation
+from kivy.network.urlrequest import UrlRequest
 
 Window.softinput_mode = 'below_target'
 Window.clearcolor = get_color_from_hex('#B3E5FC')
@@ -146,9 +148,8 @@ class StartScreen(Screen):
         play_btn.bind(on_release=self.go_to_game)
         layout.add_widget(play_btn)
         
-        # THE ZERO-RISK STATS BUTTON (NOW POINTING TO THE RAW API DATA)
-        stats_btn = StyledButton(
-            text="📊 Live Game Stats", 
+        self.stats_btn = StyledButton(
+            text="Active Player : ...", 
             bold=True, 
             font_size='13sp', 
             bg_color='#0D47A1', 
@@ -157,10 +158,8 @@ class StartScreen(Screen):
             pos_hint={'center_x': 0.5, 'center_y': 0.23}, 
             radius=[dp(12)]
         )
-        
-        # This link skips the dashboard and shows the direct {"value": X} string
-        stats_btn.bind(on_release=lambda x: webbrowser.open("https://api.counterapi.dev/v1/singhakshit_word_game_production/total_downloads"))
-        layout.add_widget(stats_btn)
+        self.stats_btn.bind(on_release=lambda x: App.get_running_app().fetch_active_players())
+        layout.add_widget(self.stats_btn)
 
         mode_box = BoxLayout(orientation='horizontal', size_hint=(0.85, 0.08), pos_hint={'center_x': 0.5, 'center_y': 0.14}, spacing=dp(12))
         self.btn_country_only = StyledButton(text="Countries Only", bold=True, font_size='13sp', bg_color='#1976D2', radius=[dp(10)])
@@ -181,6 +180,26 @@ class StartScreen(Screen):
         app = App.get_running_app()
         if hasattr(app, 'hint_sound') and app.hint_sound:
             app.hint_sound.play()
+            
+        marker_file = "played_once.marker"
+        if not os.path.exists(marker_file):
+            try:
+                with open(marker_file, "w") as f:
+                    f.write("active")
+                    
+                # SPOT 1: Pinging YOUR exact Firebase database with the new user!
+                db_url = "https://atlas-game-6a918-default-rtdb.firebaseio.com/players.json"
+                
+                UrlRequest(
+                    db_url,
+                    req_body=json.dumps({"active": True}),
+                    req_headers={'Content-Type': 'application/json'},
+                    verify=False,
+                    timeout=5
+                )
+            except Exception:
+                pass
+
         self.manager.current = 'game'
         app.restart_game()
 
@@ -285,10 +304,9 @@ class GameScreen(Screen):
         if app.bot_timer_event: Clock.unschedule(app.bot_timer_event)
 
 
-# --- MAIN APP ---
 class AtlasApp(App):
     def build(self):
-        self.countries = ["afghanistan", "albania", "algeria","america", "andorra", "angola","antigua & deps", "argentina", "armenia", "australia", "austria","azerbaijan", "bahamas", "bahrain", "bangladesh", "barbados","belarus", "belgium", "belize", "benin", "bhutan","bolivia", "bosnia herzegovina", "botswana", "brazil","brunei","bulgaria", "burkina", "burundi", "cambodia", "cameroon","canada", "cape verde", "central african rep", "chad", "chile","china", "colombia", "comoros", "congo", "cong","costa rica", "croatia", "cuba", "cyprus", "czech republic","denmark", "djibouti", "dominica", "dominican republic", "east timor","ecuador", "egypt", "el salvador", "equatorial guinea", "eritrea","estonia", "ethiopia", "fiji", "finland", "france","gabon", "gambia", "georgia", "germany", "ghana","greece", "grenada", "guatemala", "guinea", "guinea-bissau","guyana", "haiti", "honduras", "hungary", "iceland","india", "indonesia", "iran", "iraq", "ireland","israel", "italy", "ivory coast", "jamaica", "japan","jordan", "kazakhstan", "kenya", "kiribati", "north korea","south korea", "kosovo", "kuwait", "kyrgyzstan", "laos","latvia", "lebanon", "lesotho", "liberia", "libya","liechtenstein", "lithuania", "luxembourg", "macedonia", "madagascar","malawi", "malaysia", "maldives", "mali", "malta","marshall islands", "mauritania", "mauritius", "mexico", "micronesia","moldova", "monaco", "mongolia", "montenegro", "morocco","mozambique", "myanmar", "namibia", "nauru", "nepal","netherlands", "new zealand", "nicaragua", "niger", "nigeria","norway", "oman", "pakistan", "palau", "panama","papua new guinea", "paraguay", "peru", "philippines", "poland","portugal", "qatar", "romania", "russia", "rwanda","st kitts & nevis", "st lucia", "saint vincent & the grenadines","samoa", "san marino", "sao tome & principe", "saudi arabia","senegal", "serbia", "seychelles", "sierra leone", "singapore","slovakia", "slovenia", "solomon islands","somalia", "south africa","south sudan", "spain", "sri lanka", "sudan", "suriname","swaziland", "sweden", "switzerland", "syria", "taiwan","tajikistan", "tanzania", "thailand", "togo", "tonga","trinidad & tobago", "tunisia", "turkey", "turkmenistan", "tuvalu","uganda", "ukraine", "united arab emirates", "united kingdom","united states", "uruguay", "uzbekistan", "vanuatu","vatican city", "venezuela", "vietnam", "yemen","zambia", "zimbabwe"]
+        self.countries = ["afghanistan", "albania", "algeria","america", "andorra", "angola","antigua & deps", "argentina", "armenia", "australia", "austria","azerbaijan", "bahamas", "bahrain", "bangladesh", "barbados","belarus", "belgium", "belize", "benin", "bhutan","bolivia", "bosnia herzegovina", "botswana", "brazil","brunei","bulgaria", "burkina", "burundi", "cambodia", "cameroon","canada", "cape verde", "central african rep", "chad", "chile","china", "colombia", "comoros", "congo", "cong","costa rica", "croatia", "cuba", "cyprus", "czech republic","denmark", "djibouti", "dominica", "dominican republic", "east timor","ecuador", "egypt", "el salvador","england", "equatorial guinea", "eritrea","estonia", "ethiopia", "fiji", "finland", "france","gabon", "gambia", "georgia", "germany", "ghana","greece", "grenada", "guatemala", "guinea", "guinea-bissau","guyana", "haiti", "honduras", "hungary", "iceland","india", "indonesia", "iran", "iraq", "ireland","israel", "italy", "ivory coast", "jamaica", "japan","jordan", "kazakhstan", "kenya", "kiribati", "north korea","south korea", "kosovo", "kuwait", "kyrgyzstan", "laos","latvia", "lebanon", "lesotho", "liberia", "libya","liechtenstein", "lithuania", "luxembourg", "macedonia", "madagascar","malawi", "malaysia", "maldives", "mali", "malta","marshall islands", "mauritania", "mauritius", "mexico", "micronesia","moldova", "monaco", "mongolia", "montenegro", "morocco","mozambique", "myanmar", "namibia", "nauru", "nepal","netherlands", "new zealand", "nicaragua", "niger", "nigeria","norway", "oman", "pakistan", "palau", "panama","papua new guinea", "paraguay", "peru", "philippines", "poland","portugal", "qatar", "romania", "russia", "rwanda","st kitts & nevis", "st lucia", "saint vincent & the grenadines","samoa", "san marino", "sao tome & principe", "saudi arabia","scotland","senegal", "serbia", "seychelles", "sierra leone", "singapore","slovakia", "slovenia", "solomon islands","somalia", "south africa","south sudan", "spain", "sri lanka", "sudan", "suriname","swaziland", "sweden", "switzerland", "syria", "taiwan","tajikistan", "tanzania", "thailand", "togo", "tonga","trinidad & tobago", "tunisia", "turkey", "turkmenistan", "tuvalu","uganda", "ukraine", "united arab emirates", "united kingdom","united states", "uruguay", "uzbekistan", "vanuatu","vatican city", "venezuela", "vietnam", "wales","yemen","zambia", "zimbabwe",]
         self.continents = ["asia", "africa", "north america", "south america", "antarctica", "europe", "australia"]
         self.capitals = ["algiers", "luanda", "porto-novo", "gaborone", "praia", "yaounde", "bangui", "moroni", "cairo", "djibouti", "asmara", "malabo", "libreville", "accra", "conakry", "bissau", "nairobi", "maseru", "monrovia", "tripoli", "antananarivo", "lilongwe", "bamako", "nouakchott", "port louis", "rabat", "maputo", "windhoek", "niamey", "abuja", "kigali", "dakar", "victoria", "freetown", "mogadishu", "pretoria", "juba", "khartoum", "dodoma", "lome", "tunis", "kampala", "lusaka", "harare", "kabul", "yerevan", "baku", "manama", "dhaka", "thimphu", "beijing", "nicosia", "tbilisi", "new delhi", "delhi", "jakarta", "tehran", "baghdad", "tokyo", "amman", "astana", "kuwait city", "bishkek", "vientiane", "beirut", "kuala lumpur", "male", "ulaanbaatar", "kathmandu", "pyongyang", "muscat", "islamabad", "manila", "doha", "riyadh", "singapore", "seoul", "damascus", "taipei", "dushanbe", "bangkok", "dili", "ankara", "ashgabat", "abu dhabi", "tashkent", "hanoi", "sanaa", "tirana", "vienna", "minsk", "brussels", "sofia", "zagreb", "prague", "copenhagen", "tallinn", "helsinki", "paris", "berlin", "athens", "budapest", "reykjavik", "dublin", "rome", "riga", "vilnius", "luxembourg", "valletta", "chisinau", "monaco", "amsterdam", "oslo", "warsaw", "lisbon", "bucharest", "moscow", "san marino", "belgrade", "bratislava", "ljubljana", "madrid", "stockholm", "bern", "kyiv", "london", "vatican city", "ottawa", "havana", "mexico city", "washington", "canberra", "wellington", "buenos aires", "brasília", "santiago", "bogota", "quito", "asuncion", "lima", "paramaribo", "montevideo", "caracas"]
         self.states = [#india
@@ -300,8 +318,6 @@ class AtlasApp(App):
 "tasmania", "victoria", 
 #canada
 "alberta","british columbia", "manitoba", "new brunswick","nova scotia", "nunavut", "ontario", "quebec", "saskatchewan", "yukon",
-#UK
-"england", "scotland", "wales", "northern ireland",
 #Germany
 "bavaria", "berlin", "brandenburg", "bremen", "hamburg", "hesse", "saarland", "saxony", "thuringia",
 #Brazil
@@ -328,11 +344,11 @@ class AtlasApp(App):
 #argentina
 "buenos aires", "catamarca", "chaco", "chubut", "cordoba", "corrientes", "entre rios", "formosa", "jujuy", "la pampa", "la rioja", "mendoza", "misiones", "neuquen", "rio negro", "salta", "san juan", "san luis", "santa cruz", "santa fe", "tucuman",
 #columbia
-"amazonas", "antioquia", "arauca", "atlantico", "bolivar", "boyaca", "caldas", "caqueta", "casanare", "cauca", "cesar", "choco", "cordoba", "cundinamarca", "guainia", "guaviare", "huila", "magdalena", "meta", "narino", "norte de santander", "putumayo", "quindio", "risaralda", "san andres y providencia", "santander", "sucre", "tolima", "vaupes", "vichada",
+"amazonas", "antioquia", "arauca", "atlantico", "bolivar", "boyaca", "caldas", "caqueta", "casanare", "cauca", "cesar", "choco", "cordoba", "cundinamarca", "guainia", "guaviare", "huila", "magdalena", "meta", "narino", "norte de santander", "putumayo", "quindio", "risaralda", "santander", "sucre", "tolima", "vaupes", "vichada",
 #peru
 "amazonas", "ancash", "apurimac", "arequipa", "ayacucho", "cajamarca", "callao", "cusco", "huancavelica", "huanuco", "ica", "junin", "la libertad", "lambayeque", "lima", "loreto", "moquegua", "pasco", "piura", "puno", "san martin", "tacna", "tumbes", "ucayali",
 #Nigeria
-"abia", "adamawa", "akwa ibom", "anambra", "bauchi", "bayelsa", "benue", "borno", "cross river", "delta", "ebonyi", "edo", "ekiti", "enugu", "gombe", "imo", "jigawa", "kaduna", "kano", "katsina", "kebbi", "kogi", "kwara", "lagos", "nasarawa", "niger", "ogun", "ondo", "osun", "oyo", "plateau", "rivers", "sokoto", "taraba", "yobe", "zamfara",
+"abia", "adamawa", "akwa ibom", "anambra", "bauchi", "bayelsa", "benue", "borno", "cross river", "delta", "ebonyi", "edo", "ekiti", "enugu", "gombe", "imo", "jigawa", "kaduna", "kano", "katsina", "kebbi", "kogi", "kwara", "lagos", "nasarawa","ogun", "ondo", "osun", "oyo", "plateau", "rivers", "sokoto", "taraba", "yobe", "zamfara",
 #south africa
 "free state", "gauteng", "limpopo", "mpumalanga", "north west","cape",
 #egypt
@@ -370,6 +386,39 @@ class AtlasApp(App):
 
     def on_start(self):
         Clock.schedule_once(self.deferred_game_init, 0.1)
+        Clock.schedule_once(lambda dt: self.fetch_active_players(), 1.0)
+
+    def fetch_active_players(self):
+        self.start_screen.stats_btn.text = "Active Player : ..."
+        
+        # SPOT 2: Fetching the accurate count from YOUR Firebase database!
+        fetch_url = "https://atlas-game-6a918-default-rtdb.firebaseio.com/players.json?shallow=true"
+        
+        UrlRequest(
+            fetch_url,
+            on_success=self.update_active_player_badge,
+            on_error=self.handle_badge_error,
+            on_failure=self.handle_badge_error,
+            verify=False,
+            timeout=5
+        )
+
+    def update_active_player_badge(self, req, result):
+        try:
+            if type(result) is str:
+                result = json.loads(result)
+            
+            if result is None:
+                count = 0
+            else:
+                count = len(result.keys())
+                
+            self.start_screen.stats_btn.text = f"Active Player : {count}"
+        except Exception:
+            self.start_screen.stats_btn.text = "Active Player : Offline"
+
+    def handle_badge_error(self, req, error):
+        self.start_screen.stats_btn.text = "Active Player : Offline"
 
     def deferred_game_init(self, dt):
         self.game_mode = "country"
@@ -438,7 +487,7 @@ class AtlasApp(App):
             else:
                 self.add_history_item("YOU", "Forgot", status="error", error_msg="Lost 1 Life")
                 if self.fail_sound: self.fail_sound.play()
-                self.deduct_life(player=True, reason="You skipped!")
+                self.deduct_life(player=True, reason="You skipped")
             return
 
         if not self.first_turn and not val.startswith(self.bot_country[-1]):
@@ -462,9 +511,13 @@ class AtlasApp(App):
             self.trigger_shake()
             return
 
-        # CORRECT ANSWER LOGIC
         if self.timer_event: Clock.unschedule(self.timer_event)
         if self.success_sound: self.success_sound.play()
+
+        try:
+            tts.speak(val)
+        except Exception:
+            pass
         
         if self.bot_panic_cooldown > 0:
             self.bot_panic_cooldown -= 1
@@ -486,7 +539,7 @@ class AtlasApp(App):
         self.start_timer()
         self.gs.instruction.text = "Bot thinking..."
         if self.bot_timer_event: Clock.unschedule(self.bot_timer_event)
-        self.bot_timer_event = Clock.schedule_once(lambda dt: self.bot_check_turn(val[-1]), random.uniform(1.0, 7.5))
+        self.bot_timer_event = Clock.schedule_once(lambda dt: self.bot_check_turn(val[-1]), random.uniform(2.5, 10.0))
 
     def bot_check_turn(self, char):
         possible = [c for c in self.active_pool if c.startswith(char) and c not in self.used_countries]
@@ -520,10 +573,16 @@ class AtlasApp(App):
 
         self.bot_move(possible)
 
+    def bot_fresh_start(self, dt):
+        possible = [c for c in self.active_pool if c not in self.used_countries]
+        if not possible:
+            self.game_over("Draw! No words left.")
+            return
+        self.bot_move(possible)
+
     def bot_move(self, possible_options):
         if self.success_sound: self.success_sound.play()
 
-        # SMART BOT LOGIC: Prioritize Countries, Continents, and Capitals over States
         if self.game_mode != "country":
             premium_options = [c for c in possible_options if self.item_types.get(c, "C") in ["C", "Cap", "Cont"]]
             fallback_options = [c for c in possible_options if self.item_types.get(c, "C") == "S"]
@@ -535,6 +594,11 @@ class AtlasApp(App):
         else:
             self.bot_country = random.choice(possible_options)
 
+        try:
+            tts.speak(self.bot_country)
+        except Exception:
+            pass
+
         self.used_countries.append(self.bot_country.lower())
         
         display_tag = self.item_types.get(self.bot_country, "C") if self.game_mode != "country" else "C"
@@ -542,6 +606,28 @@ class AtlasApp(App):
         self.add_history_item("BOT", self.bot_country, status="correct", category_tag=display_tag if self.game_mode != "country" else "")
         self.gs.last_letter_lbl.text = self.bot_country[-1].upper()
         
+        user_options_left = [c for c in self.active_pool if c.startswith(self.bot_country[-1]) and c not in self.used_countries]
+        
+        if not user_options_left:
+            if self.game_mode == "country":
+                if self.timer_event: Clock.unschedule(self.timer_event)
+                if self.bot_timer_event: Clock.unschedule(self.bot_timer_event)
+                try:
+                    if self.tick_sound: self.tick_sound.stop()
+                except: pass
+                
+                if self.victory_sound: self.victory_sound.play()
+                self.gs.instruction.text = f"[b][color=#4CAF50]VICTORY![/color][/b]\nBot played a dead-end!"
+                self.gs.last_letter_lbl.text = "[color=#FFC107]W[/color]"
+                self.update_best_score()
+                self.gs.user_input.disabled = True
+                self.trigger_shake()
+            else:
+                self.deduct_life(player=False, reason="Bot played a dead-end word")
+            return
+
+        self.first_turn = False  
+
         self.gs.instruction.text = f"Bot played: {self.bot_country.upper()}"
         self.gs.user_input.disabled = False
         self.start_timer()
@@ -579,12 +665,21 @@ class AtlasApp(App):
             
             self.trigger_shake()
         else:
-            if not player and self.fail_sound: self.fail_sound.play()
-            self.gs.user_input.disabled = False
-            self.first_turn = True
-            self.gs.instruction.text = f"{reason}! Fresh turn, play any item."
-            self.gs.last_letter_lbl.text = "?"
-            self.start_timer()
+            if not player:
+                if self.fail_sound: self.fail_sound.play()
+                self.gs.user_input.disabled = False
+                self.first_turn = True
+                self.gs.instruction.text = f"{reason}!\nYour fresh turn. Play any item."
+                self.gs.last_letter_lbl.text = "?"
+                self.start_timer()
+            else:
+                self.gs.user_input.disabled = True
+                self.first_turn = True
+                self.gs.instruction.text = f"{reason}!\nBot is taking a fresh turn..."
+                self.gs.last_letter_lbl.text = "?"
+                
+                if self.bot_timer_event: Clock.unschedule(self.bot_timer_event)
+                self.bot_timer_event = Clock.schedule_once(self.bot_fresh_start, 2.0)
 
     def start_timer(self):
         if self.timer_event: Clock.unschedule(self.timer_event)
